@@ -4,10 +4,20 @@
 \alias{calculate.bv}
 \title{Calculate breeding values}
 \usage{
-calculate.bv(population, gen, sex, nr, activ_bv,
-  import.position.calculation = NULL, decodeOriginsU = decodeOriginsR,
-  store.effect.freq = FALSE, bit.storing = FALSE, nbits = 30,
-  output_compressed = FALSE)
+calculate.bv(
+  population,
+  gen,
+  sex,
+  nr,
+  activ_bv,
+  import.position.calculation = NULL,
+  decodeOriginsU = decodeOriginsR,
+  store.effect.freq = FALSE,
+  bit.storing = FALSE,
+  nbits = 30,
+  output_compressed = FALSE,
+  bv.ignore.traits = NULL
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -26,15 +36,21 @@ calculate.bv(population, gen, sex, nr, activ_bv,
 
 \item{store.effect.freq}{If TRUE store the allele frequency of effect markers per generation}
 
-\item{bit.storing}{Set to TRUE if the RekomBre (not-miraculix! bit-storing is used)}
+\item{bit.storing}{Set to TRUE if the MoBPS (not-miraculix! bit-storing is used)}
 
-\item{nbits}{Bits available in RekomBre-bit-storing}
+\item{nbits}{Bits available in MoBPS-bit-storing}
 
 \item{output_compressed}{Set to TRUE to get a miraculix-compressed genotype/haplotype}
+
+\item{bv.ignore.traits}{Vector of traits to ignore in the calculation of the genomic value (default: NULL; Only recommended for high number of traits and experienced users!)}
 }
 \value{
 [[1]] true genomic value [[2]] allele frequency at QTL markers
 }
 \description{
 Internal function to calculate the breeding value of a given individual
+}
+\examples{
+data(ex_pop)
+calculate.bv(ex_pop, gen=1, sex=1, nr=1, activ_bv = 1)
 }

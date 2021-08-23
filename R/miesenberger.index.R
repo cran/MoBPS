@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #' Miesenberger Index
 #'
-#' Function to selection index weights according to Miesenberger 1999
+#' Function to selection index weights according to Miesenberger 1997
 #' @param V1 Inverted phenotypic covarianz matrix
 #' @param V Phenotypic covarianz matrix
 #' @param G Genomic covarianz matrix
@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @return weights of the selection index
 
 miesenberger.index <- function(V, G, V1=NULL, RG=NULL, r, w, zw=NULL){
+
   if(length(V1)==0){
     V1 <- chol2inv(chol(V))
   }

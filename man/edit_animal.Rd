@@ -4,8 +4,16 @@
 \alias{edit_animal}
 \title{Internal gene editing function}
 \usage{
-edit_animal(population, gen, sex, nr, nr.edits,
-  decodeOriginsU = decodeOriginsR, bit.storing = FALSE, nbits = 30)
+edit_animal(
+  population,
+  gen,
+  sex,
+  nr,
+  nr.edits,
+  decodeOriginsU = decodeOriginsR,
+  bit.storing = FALSE,
+  nbits = 30
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -20,9 +28,9 @@ edit_animal(population, gen, sex, nr, nr.edits,
 
 \item{decodeOriginsU}{Used function for the decoding of genetic origins [[5]]/[[6]]}
 
-\item{bit.storing}{Set to TRUE if the RekomBre (not-miraculix! bit-storing is used)}
+\item{bit.storing}{Set to TRUE if the MoBPS (not-miraculix! bit-storing is used)}
 
-\item{nbits}{Bits available in RekomBre-bit-storing}
+\item{nbits}{Bits available in MoBPS-bit-storing}
 }
 \value{
 animal after genome editing

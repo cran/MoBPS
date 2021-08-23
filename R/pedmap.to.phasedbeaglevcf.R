@@ -19,9 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Perform imputing/phasing
+#' Internal function to perform imputing/phasing
 #'
-#' Perform imputing/phasing (path chosen for the web-based application)
+#' Internal function to perform imputing/phasing (path chosen for the web-based application)
 #' @param ped_path Directory of the ped-file
 #' @param map_path Directory of the map-file
 #' @param vcf_path Directory of the vcf-file (this will override any ped/map-file input)

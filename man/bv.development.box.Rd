@@ -2,12 +2,21 @@
 % Please edit documentation in R/bv.development.box.R
 \name{bv.development.box}
 \alias{bv.development.box}
-\title{Devolopment of genetic/breeding value}
+\title{Development of genetic/breeding value using a boxplot}
 \usage{
-bv.development.box(population, database = NULL, gen = NULL,
-  cohorts = NULL, bvrow = "all", json = FALSE, display = "bv",
-  display.selection = FALSE, display.reproduction = FALSE,
-  ylim = NULL, fix_mfrow = FALSE)
+bv.development.box(
+  population,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  bvrow = "all",
+  json = FALSE,
+  display = "bv",
+  display.selection = FALSE,
+  display.reproduction = FALSE,
+  ylim = NULL,
+  fix_mfrow = FALSE
+)
 }
 \arguments{
 \item{population}{population list}
@@ -36,7 +45,7 @@ bv.development.box(population, database = NULL, gen = NULL,
 Genomic values of selected gen/database/cohort
 }
 \description{
-Function to plot genetic/breeding values for multiple generation/cohorts
+Function to plot genetic/breeding values for multiple generation/cohorts using box plots
 }
 \examples{
 data(ex_pop)

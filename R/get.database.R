@@ -50,6 +50,9 @@ get.database<- function(population, gen=NULL, database=NULL, cohorts=NULL){
     }
     database <- cbind(database, start, end)
   }
+  if(length(database)>0 && ncol(database)==3){
+    database <- cbind(database, database[,3])
+  }
   if(length(cohorts)>0){
     database2 <- matrix(0L, nrow=length(cohorts), ncol=4)
     for(index in 1:length(cohorts)){
@@ -59,6 +62,9 @@ get.database<- function(population, gen=NULL, database=NULL, cohorts=NULL){
       first <- as.numeric(population$info$cohorts[row,5 + sex])
       last <- first + as.numeric(population$info$cohorts[row,2 + sex]) - 1
       database2[index,] <- c(gen,sex,first,last)
+    }
+    if(sum(is.na(database2))>0){
+      warning("Cohort-name is not available! \nCheck cohort names (in particular for added '_F' and '_M') / get.cohorts()!")
     }
     database <- rbind(database, database2)
   }

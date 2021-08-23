@@ -28,13 +28,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
 #' @param chromosomen Beschraenkung des Genotypen auf bestimmte Chromosomen (default: 1)
+#' @param non.genotyped.as.missing Set to TRUE to replaced non-genotyped entries with "./."
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names
 #' @examples
 #' data(ex_pop)
 #' \donttest{get.vcf(path=tempdir(), ex_pop, gen=2)}
 #' @return VCF-file for in gen/database/cohorts selected individuals
 #' @export
 
-get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, chromosomen="all"){
+get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, chromosomen="all",
+                    non.genotyped.as.missing=FALSE, use.id = FALSE){
 
   haplo <- get.haplo(population, database=database, gen=gen, cohorts=cohorts, chromosomen=chromosomen, export.alleles=FALSE)
   # haplo <- get.haplo(population, gen=1)
@@ -58,20 +61,40 @@ get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL
 
   vcfgeno <- matrix(paste0(haplo[,(1:(ncol(haplo)/2))*2], "|", haplo[,(1:(ncol(haplo)/2))*2-1]), ncol=ncol(haplo)/2)
 
+  if(non.genotyped.as.missing){
+    is_genotyped <- get.genotyped.snp(population, gen=gen, database = database, cohorts=cohorts)
+
+    if(sum(!is_genotyped)>0){
+      vcfgeno[!is_genotyped] <- "./."
+    }
+
+  }
+
+
   ref[ref==0] <- "A"
   ref[ref==1] <- "C"
   alt[alt==0] <- "A"
   alt[alt==1] <- "C"
   options(scipen=999)
   vcfgenofull <- cbind(chr.nr, as.numeric(bp), snpname, ref, alt, ".", "PASS", ".", "GT", vcfgeno)
-  vcfgenofull <- rbind(c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", get.pedigree(population, database=database, gen=gen, cohorts = cohorts)[,1]),vcfgenofull)
+  vcfgenofull <- rbind(c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", get.pedigree(population, database=database, gen=gen, cohorts = cohorts, id=use.id)[,1]),vcfgenofull)
 
   headerfile <- rbind(
     "##fileformat=VCFv4.2",
     gsub("-", "", paste0("##filedate=",  Sys.Date())),
     paste0("##source='MoBPS_", utils::packageVersion("MoBPS"),"'"),
-    "##FORMAT=<ID=GT,Number=1,Type=String,Description='Genotype'>"
+    '##FILTER=<ID=PASS,Description="all filters passed">'
   )
+
+  nchr <- unique(chr.nr)
+  contigs <- numeric(length(nchr))
+  for(index in 1:length(nchr)){
+    contigs[index] <- paste0("##contig=<ID=", nchr[index],",length=", max(as.numeric(bp)[chr.nr==nchr[index]]),">")
+  }
+
+  headerfile <- rbind(headerfile, t(t(contigs)),     "##FORMAT=<ID=GT,Number=1,Type=String,Description='Genotype'>")
+
+
 
   utils::write.table(headerfile, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE)
   utils::write.table(vcfgenofull, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE, append = TRUE, sep="\t")

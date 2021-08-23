@@ -2,10 +2,9 @@
 % Please edit documentation in R/get.pheno.off.count.R
 \name{get.pheno.off.count}
 \alias{get.pheno.off.count}
-\title{Export underlying phenotypes}
+\title{Export underlying number of used offspring for offspring phenotypes}
 \usage{
-get.pheno.off.count(population, database = NULL, gen = NULL,
-  cohorts = NULL)
+get.pheno.off.count(population, database = NULL, gen = NULL, cohorts = NULL)
 }
 \arguments{
 \item{population}{Population list}

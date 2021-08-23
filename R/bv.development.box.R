@@ -19,9 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Devolopment of genetic/breeding value
+#' Development of genetic/breeding value using a boxplot
 #'
-#' Function to plot genetic/breeding values for multiple generation/cohorts
+#' Function to plot genetic/breeding values for multiple generation/cohorts using box plots
 #' @param population population list
 #' @param display Choose between "bv", "pheno", "bve" (default: "bv")
 #' @param display.selection Display lines between generated cohorts via selection (webinterface)
@@ -132,7 +132,7 @@ bv.development.box <- function(population, database=NULL, gen=NULL, cohorts=NULL
   }
   for(nr in bvrow){
     time_points <- sort(unique(time_plot))
-    x_axis <- length(time_points) + length(values)
+    x_axis <- length(time_points) + length(values) - 1.5
     y_min <- Inf
     y_max <- -Inf
     for(index in 1:length(values)){

@@ -4,18 +4,46 @@
 \alias{creating.trait}
 \title{Generation of genomic traits}
 \usage{
-creating.trait(population = NULL, real.bv.add = NULL,
-  real.bv.mult = NULL, real.bv.dice = NULL, bv.total = 0,
-  polygenic.variance = 100, bve.mult.factor = NULL,
-  bve.poly.factor = NULL, base.bv = NULL,
-  new.phenotype.correlation = NULL, new.breeding.correlation = NULL,
-  n.additive = 0, n.dominant = 0, n.qualitative = 0,
-  n.quantitative = 0, var.additive.l = NULL, var.dominant.l = NULL,
-  var.qualitative.l = NULL, var.quantitative.l = NULL,
-  exclude.snps = NULL, randomSeed = NULL, shuffle.traits = NULL,
-  shuffle.cor = NULL, replace.real.bv = FALSE, trait.name = NULL,
-  remove.invalid.qtl = TRUE, bv.standard = FALSE, mean.target = NULL,
-  var.target = NULL, verbose = TRUE)
+creating.trait(
+  population,
+  real.bv.add = NULL,
+  real.bv.mult = NULL,
+  real.bv.dice = NULL,
+  bv.total = 0,
+  polygenic.variance = 100,
+  bve.mult.factor = NULL,
+  bve.poly.factor = NULL,
+  base.bv = NULL,
+  new.phenotype.correlation = NULL,
+  new.residual.correlation = NULL,
+  new.breeding.correlation = NULL,
+  n.additive = 0,
+  n.equal.additive = 0,
+  n.dominant = 0,
+  n.equal.dominant = 0,
+  n.qualitative = 0,
+  n.quantitative = 0,
+  dominant.only.positive = FALSE,
+  var.additive.l = NULL,
+  var.dominant.l = NULL,
+  var.qualitative.l = NULL,
+  var.quantitative.l = NULL,
+  effect.size.equal.add = 1,
+  effect.size.equal.dom = 1,
+  exclude.snps = NULL,
+  randomSeed = NULL,
+  shuffle.traits = NULL,
+  shuffle.cor = NULL,
+  replace.traits = FALSE,
+  trait.name = NULL,
+  remove.invalid.qtl = TRUE,
+  bv.standard = FALSE,
+  mean.target = NULL,
+  var.target = NULL,
+  verbose = TRUE,
+  is.maternal = NULL,
+  is.paternal = NULL
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -36,17 +64,25 @@ creating.trait(population = NULL, real.bv.add = NULL,
 
 \item{base.bv}{Average genetic value of a trait}
 
-\item{new.phenotype.correlation}{Correlation of the simulated enviromental variance}
+\item{new.phenotype.correlation}{(OLD! - use new.residual.correlation) Correlation of the simulated enviromental variance}
+
+\item{new.residual.correlation}{Correlation of the simulated enviromental variance}
 
 \item{new.breeding.correlation}{Correlation of the simulated genetic variance (child share! heritage is not influenced!}
 
-\item{n.additive}{Number of additive QTL}
+\item{n.additive}{Number of additive QTL with effect size drawn from a gaussian distribution}
 
-\item{n.dominant}{Number of dominante QTL}
+\item{n.equal.additive}{Number of additive QTL with equal effect size (effect.size)}
+
+\item{n.dominant}{Number of dominant QTL with effect size drawn from a gaussian distribution}
+
+\item{n.equal.dominant}{Number of n.equal.dominant QTL with equal effect size}
 
 \item{n.qualitative}{Number of qualitative epistatic QTL}
 
 \item{n.quantitative}{Number of quantitative epistatic QTL}
+
+\item{dominant.only.positive}{Set to TRUE to always asign the heterozygous variant with the higher of the two homozygous effects (e.g. hybrid breeding); default: FALSE}
 
 \item{var.additive.l}{Variance of additive QTL}
 
@@ -56,6 +92,10 @@ creating.trait(population = NULL, real.bv.add = NULL,
 
 \item{var.quantitative.l}{Variance of quantitative epistatic QTL}
 
+\item{effect.size.equal.add}{Effect size of the QTLs in n.equal.additive}
+
+\item{effect.size.equal.dom}{Effect size of the QTLs in n.equal.dominant}
+
 \item{exclude.snps}{Marker were no QTL are simulated on}
 
 \item{randomSeed}{Set random seed of the process}
@@ -64,7 +104,7 @@ creating.trait(population = NULL, real.bv.add = NULL,
 
 \item{shuffle.cor}{Target Correlation between shuffeled traits}
 
-\item{replace.real.bv}{If TRUE delete the simulated traits added before}
+\item{replace.traits}{If TRUE delete the simulated traits added before}
 
 \item{trait.name}{Name of the trait generated}
 
@@ -76,13 +116,19 @@ creating.trait(population = NULL, real.bv.add = NULL,
 
 \item{var.target}{Target variance}
 
-\item{verbose}{Set to FALSE to not display any prints
-population <- creating.diploid(nsnp=1000, nindi=100)
-population <- creating.trait(population, n.additive=100)}
+\item{verbose}{Set to FALSE to not display any prints}
+
+\item{is.maternal}{Vector coding if a trait is caused by a maternal effect (Default: all FALSE)}
+
+\item{is.paternal}{Vector coding if a trait is caused by a paternal effect (Default: all FALSE)}
 }
 \value{
 Population-list with one or more additional new traits
 }
 \description{
 Generation of the trait in a starting population
+}
+\examples{
+population <- creating.diploid(nsnp=1000, nindi=100)
+population <- creating.trait(population, n.additive=100)
 }

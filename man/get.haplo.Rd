@@ -4,8 +4,16 @@
 \alias{get.haplo}
 \title{Derive haplotypes of selected individuals}
 \usage{
-get.haplo(population, database = NULL, gen = NULL, cohorts = NULL,
-  chromosomen = "all", export.alleles = FALSE)
+get.haplo(
+  population,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  chromosomen = "all",
+  export.alleles = FALSE,
+  non.genotyped.as.missing = FALSE,
+  use.id = FALSE
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -19,6 +27,10 @@ get.haplo(population, database = NULL, gen = NULL, cohorts = NULL,
 \item{chromosomen}{Beschraenkung der Haplotypen auf bestimmte Chromosomen (default: 1)}
 
 \item{export.alleles}{If TRUE export underlying alleles instead of just 012}
+
+\item{non.genotyped.as.missing}{Set to TRUE to replace non-genotyped markers with NA}
+
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
 }
 \value{
 Haplotype data for in gen/database/cohorts selected individuals

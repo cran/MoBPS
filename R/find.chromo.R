@@ -19,7 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Position detection
+#' Position detection (chromosome)
 #'
 #' Internal function for the detection on which chromosome each marker is
 #' @param position position in the genome

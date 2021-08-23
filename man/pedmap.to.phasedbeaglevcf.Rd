@@ -2,12 +2,17 @@
 % Please edit documentation in R/pedmap.to.phasedbeaglevcf.R
 \name{pedmap.to.phasedbeaglevcf}
 \alias{pedmap.to.phasedbeaglevcf}
-\title{Perform imputing/phasing}
+\title{Internal function to perform imputing/phasing}
 \usage{
-pedmap.to.phasedbeaglevcf(ped_path = NULL, map_path = NULL,
-  vcf_path = NULL, beagle_jar = "/home/nha/beagle.03Jul18.40b.jar",
-  plink_dir = "/home/nha/Plink/plink", db_dir = "/home/nha/Plink/DB/",
-  verbose = TRUE)
+pedmap.to.phasedbeaglevcf(
+  ped_path = NULL,
+  map_path = NULL,
+  vcf_path = NULL,
+  beagle_jar = "/home/nha/beagle.03Jul18.40b.jar",
+  plink_dir = "/home/nha/Plink/plink",
+  db_dir = "/home/nha/Plink/DB/",
+  verbose = TRUE
+)
 }
 \arguments{
 \item{ped_path}{Directory of the ped-file}
@@ -28,5 +33,5 @@ pedmap.to.phasedbeaglevcf(ped_path = NULL, map_path = NULL,
 Phased vcf file in vcf_path
 }
 \description{
-Perform imputing/phasing (path chosen for the web-based application)
+Internal function to perform imputing/phasing (path chosen for the web-based application)
 }

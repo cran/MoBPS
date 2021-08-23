@@ -28,13 +28,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
 #' @param chromosomen Beschraenkung des Genotypen auf bestimmte Chromosomen (default: 1)
 #' @param export.alleles If TRUE export underlying alleles instead of just 012
+#' @param non.genotyped.as.missing Set to TRUE to replace non-genotyped markers with NA
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
 #' @examples
 #' data(ex_pop)
 #' geno <- get.geno(ex_pop, gen=2)
 #' @return Genotype data for in gen/database/cohorts selected individuals
 #' @export
 
-get.geno <- function(population, database=NULL, gen=NULL, cohorts=NULL, chromosomen="all", export.alleles=FALSE){
+get.geno <- function(population, database=NULL, gen=NULL, cohorts=NULL, chromosomen="all", export.alleles=FALSE,
+                     non.genotyped.as.missing=FALSE, use.id=FALSE){
 
   if(length(chromosomen)==1 && chromosomen=="all"){
     subsetting <- FALSE
@@ -58,7 +61,12 @@ get.geno <- function(population, database=NULL, gen=NULL, cohorts=NULL, chromoso
   if(length(population$info$origin.gen)>0){
     population$info$origin.gen <- as.integer(population$info$origin.gen)
   } else{
-    population$info$origin.gen <- 1:64L
+    if(population$info$miraculix){
+      population$info$origin.gen <- 1:64L
+    } else{
+      population$info$origin.gen <- 1:32L
+    }
+
   }
 
 
@@ -76,7 +84,7 @@ get.geno <- function(population, database=NULL, gen=NULL, cohorts=NULL, chromoso
   titel <- t(population$info$snp.base[,relevant.snps])
 
   n.animals <- sum(database[,4] - database[,3] +1)
-  data <- matrix(0, ncol=n.animals, nrow=nsnp)
+  data <- matrix(0L, ncol=n.animals, nrow=nsnp)
   before <- 0
   names <- numeric(n.animals)
   colnames(titel) <- c("Major_Allel", "Minor_Allel")
@@ -105,8 +113,22 @@ get.geno <- function(population, database=NULL, gen=NULL, cohorts=NULL, chromoso
     }
     before <- before + nanimals
   }
-  colnames(data) <- names
+
+  if(non.genotyped.as.missing){
+    is_genotyped <- get.genotyped.snp(population, database = database)[relevant.snps,]
+    if(sum(!is_genotyped)>0){
+      data[!is_genotyped] <- NA
+    }
+  }
+
   rownames(data) <- population$info$snp.name[relevant.snps]
+
+  if(use.id){
+    colnames(data) <- get.id(population, database = database)
+  } else{
+    colnames(data) <- names
+  }
+
   if(export.alleles){
     return(list(titel,data))
   } else{

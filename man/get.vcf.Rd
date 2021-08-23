@@ -4,8 +4,16 @@
 \alias{get.vcf}
 \title{Generate vcf-file}
 \usage{
-get.vcf(population, path = NULL, database = NULL, gen = NULL,
-  cohorts = NULL, chromosomen = "all")
+get.vcf(
+  population,
+  path = NULL,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  chromosomen = "all",
+  non.genotyped.as.missing = FALSE,
+  use.id = FALSE
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -19,6 +27,10 @@ get.vcf(population, path = NULL, database = NULL, gen = NULL,
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
 \item{chromosomen}{Beschraenkung des Genotypen auf bestimmte Chromosomen (default: 1)}
+
+\item{non.genotyped.as.missing}{Set to TRUE to replaced non-genotyped entries with "./."}
+
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names}
 }
 \value{
 VCF-file for in gen/database/cohorts selected individuals

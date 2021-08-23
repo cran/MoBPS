@@ -38,8 +38,12 @@ summary.population <- function(object, ...){
   cat(paste0("Total: ", sum(nindi), " Individuals\n"))
   cat(paste0("Of which ", nindi[1], " are male and ", nindi[2], " are female.\n"))
   cat(paste0("There are ", nrow(population$info$size), " generations\n"))
-  cat(paste0("and ", nrow(population$info$cohorts), " unique cohorts.\n \n"))
+  cat(paste0("and ", nrow(population$info$cohorts), " unique cohorts.\n"))
 
+  if(sum(nindi)>population$info$next.animal){
+    cat(paste0(sum(nindi) - population$info$next.animal +1, " individuals are copies of previously generated individuals.\n"))
+  }
+  cat("\n")
   cat("Genome Info:\n")
   if(population$info$chromosome==1){
     cat(paste0("There is ", population$info$chromosome, " unique chromosome.\n"))
@@ -58,7 +62,9 @@ summary.population <- function(object, ...){
   if(population$info$bv.nr>1){
     cat("\nTrait Info:\n")
     cat(paste0("There are ", population$info$bv.nr, " modelled traits.\n"))
-    cat(paste0("Of which ", population$info$bv.calc, " have underlying QTL.\n"))
+    cat(paste0("Of which ", sum(!population$info$bv.random), " have underlying QTL.\n"))
+    if(sum(population$info$bv.random & !population$info$is.combi)>0) cat(paste0("Of which ", sum(population$info$bv.random & !population$info$is.combi), " are non-QTL traits.\n"))
+    if(sum(population$info$bv.random & population$info$is.combi) >0) cat(paste0("Of which ", sum(population$info$bv.random & population$info$is.combi), " are combination of other traits.\n"))
     if(population$info$bv.nr>0){
       cat("Trait names are:")
       cat(population$info$trait.name)
@@ -68,14 +74,14 @@ summary.population <- function(object, ...){
       if(sum(temp1)==0){
         cat("Genetics of traits are uncorrelated. \n")
       } else{
-        cat(paste0("Highest correlation between genetics of traits is ", max(temp1),".\n"))
+        cat(paste0("Highest correlation between genetics of traits is ", max(temp1)," (absolut value).\n"))
       }
       temp1 <- population$info$pheno.correlation %*% t(population$info$pheno.correlation)
       diag(temp1) <- 0
       if(sum(temp1)==0){
-        cat("There are no interactions between enviromental effects.\n")
+        cat("There are no interactions between residual effects.\n")
       } else{
-        cat(paste0("Highest correlation between enviromental effects is ", max(temp1)))
+        cat(paste0("Highest correlation between residual effects is ", max(temp1)," (absolut value).\n"))
       }
 
     }

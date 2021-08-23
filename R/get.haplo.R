@@ -28,13 +28,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
 #' @param chromosomen Beschraenkung der Haplotypen auf bestimmte Chromosomen (default: 1)
 #' @param export.alleles If TRUE export underlying alleles instead of just 012
+#' @param non.genotyped.as.missing Set to TRUE to replace non-genotyped markers with NA
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
 #' @examples
 #' data(ex_pop)
 #' haplo <- get.haplo(ex_pop, gen=2)
 #' @return Haplotype data for in gen/database/cohorts selected individuals
 #' @export
 
-get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromosomen="all", export.alleles=FALSE){
+get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromosomen="all", export.alleles=FALSE,
+                     non.genotyped.as.missing=FALSE, use.id=FALSE){
 
   if(length(chromosomen)==1 && chromosomen=="all"){
     subsetting <- FALSE
@@ -58,7 +61,12 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
   if(length(population$info$origin.gen)>0){
     population$info$origin.gen <- as.integer(population$info$origin.gen)
   } else{
-    population$info$origin.gen <- 1:64L
+    if(population$info$miraculix){
+      population$info$origin.gen <- 1:64L
+    } else{
+      population$info$origin.gen <- 1:32L
+    }
+
   }
 
   database <- get.database(population, gen, database, cohorts)
@@ -99,9 +107,9 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
         rindex <- 1
         for(index in animals[3]:animals[4]){
           if(population$info$miraculix && !subsetting){
-            data[, before + c(rindex,rindex+1)] <- t(miraculix::computeSNPS(population,animals[1], animals[2] , index, what="haplo"))
+            data[, before + c(rindex,rindex+1)] <- miraculix::computeSNPS(population,animals[1], animals[2] , index, what="haplo")
           } else if(population$info$miraculix){
-            data[, before + c(rindex,rindex+1)] <- t(miraculix::computeSNPS(population,animals[1], animals[2] , index, what="haplo")[,relevant.snps])
+            data[, before + c(rindex,rindex+1)] <- miraculix::computeSNPS(population,animals[1], animals[2] , index, what="haplo")[relevant.snps,]
           } else{
             data[, before + c(rindex,rindex+1)] <- t(compute.snps(population,animals[1], animals[2],index, decodeOriginsU=decodeOriginsU)[,relevant.snps])
           }
@@ -113,7 +121,21 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
   }
 
 
-  colnames(data) <- names
+  if(non.genotyped.as.missing){
+    is_genotyped <- get.genotyped.snp(population, database = database)[relevant.snps,]
+    if(sum(!is_genotyped)>0){
+      data[,(1:(ncol(data)/2))*2-1][!is_genotyped] <- NA
+      data[,(1:(ncol(data)/2))*2][!is_genotyped] <- NA
+    }
+  }
+
+
+  if(use.id){
+    colnames(data) <- get.id(population, database = database)
+  } else{
+    colnames(data) <- names
+  }
+
   rownames(data) <- population$info$snp.name[relevant.snps]
   if(export.alleles){
     return(list(titel,data))

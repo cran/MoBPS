@@ -4,8 +4,15 @@
 \alias{get.pedigree}
 \title{Derive pedigree}
 \usage{
-get.pedigree(population, database = NULL, gen = NULL, cohorts = NULL,
-  founder.zero = TRUE, raw = FALSE)
+get.pedigree(
+  population,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  founder.zero = TRUE,
+  raw = FALSE,
+  id = FALSE
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -19,6 +26,8 @@ get.pedigree(population, database = NULL, gen = NULL, cohorts = NULL,
 \item{founder.zero}{Parents of founders are displayed as "0" (default: TRUE)}
 
 \item{raw}{Set to TRUE to not convert numbers into Sex etc.}
+
+\item{id}{Set to TRUE to extract individual IDs}
 }
 \value{
 Pedigree-file for in gen/database/cohorts selected individuals

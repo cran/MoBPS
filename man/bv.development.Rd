@@ -2,15 +2,29 @@
 % Please edit documentation in R/bv.development.R
 \name{bv.development}
 \alias{bv.development}
-\title{Devolopment of genetic/breeding value}
+\title{Development of genetic/breeding value}
 \usage{
-bv.development(population, database = NULL, gen = NULL,
-  cohorts = NULL, confidence = c(1, 2, 3), development = c(1, 2, 3),
-  quantile = 0.95, bvrow = "all", ignore.zero = TRUE, json = FALSE,
-  display.time.point = FALSE, display.creating.type = FALSE,
-  display.cohort.name = FALSE, display.sex = FALSE,
-  equal.spacing = FALSE, time_reorder = FALSE, display.line = TRUE,
-  ylim = NULL, fix_mfrow = FALSE)
+bv.development(
+  population,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  confidence = c(1, 2, 3),
+  development = c(1, 2, 3),
+  quantile = 0.95,
+  bvrow = "all",
+  ignore.zero = TRUE,
+  json = FALSE,
+  display.time.point = FALSE,
+  display.creating.type = FALSE,
+  display.cohort.name = FALSE,
+  display.sex = FALSE,
+  equal.spacing = FALSE,
+  time_reorder = FALSE,
+  display.line = TRUE,
+  ylim = NULL,
+  fix_mfrow = FALSE
+)
 }
 \arguments{
 \item{population}{population list}
@@ -27,7 +41,7 @@ bv.development(population, database = NULL, gen = NULL,
 
 \item{quantile}{Quantile of the confidence interval to draw (default: 0.05)}
 
-\item{bvrow}{Which traits to display (for multiple traits separte plots (par(mfrow)))}
+\item{bvrow}{Which traits to display (for multiple traits separate plots (par(mfrow)))}
 
 \item{ignore.zero}{Cohorts with only 0 individuals are not displayed (default: TRUE)}
 

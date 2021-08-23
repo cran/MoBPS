@@ -19,7 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Devolopment of genetic/breeding value
+#' Development of genetic/breeding value
 #'
 #' Function to plot genetic/breeding values for multiple generation/cohorts
 #' @param population population list
@@ -28,7 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
 #' @param confidence Draw confidence intervals for (1- bv, 2- bve, 3- pheno; default: c(1,2,3))
 #' @param quantile Quantile of the confidence interval to draw (default: 0.05)
-#' @param bvrow Which traits to display (for multiple traits separte plots (par(mfrow)))
+#' @param bvrow Which traits to display (for multiple traits separate plots (par(mfrow)))
 #' @param ignore.zero Cohorts with only 0 individuals are not displayed (default: TRUE)
 #' @param json If TRUE extract which cohorts to plot according to the json-file used in json.simulation
 #' @param display.time.point Set TRUE to use time point of generated to sort groups
@@ -153,13 +153,13 @@ bv.development <- function(population, database=NULL, gen=NULL, cohorts=NULL,
     for(index in 1:length(bv)){
       means[1,index] <- base::mean(bv[[index]][nr,])
       means[2,index] <- base::mean(bve[[index]][nr,])
-      means[3,index] <- base::mean(pheno[[index]][nr,])
+      means[3,index] <- base::mean(pheno[[index]][nr,] , na.rm=TRUE)
       sds[1,index] <- stats::sd(bv[[index]][nr,])
       sds[2,index] <- stats::sd(bve[[index]][nr,])
-      sds[3,index] <- stats::sd(pheno[[index]][nr,])
+      sds[3,index] <- stats::sd(pheno[[index]][nr,] , na.rm=TRUE)
       all0[1,index] <- base::prod(bv[[index]][nr,]==0)
       all0[2,index] <- base::prod(bve[[index]][nr,]==0)
-      all0[3,index] <- base::prod(pheno[[index]][nr,]==0)
+      all0[3,index] <- base::prod(pheno[[index]][nr,]==0, na.rm=TRUE)
     }
     for(index in 1:3){
       if(sum(development==index)==0){

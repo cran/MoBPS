@@ -30,6 +30,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param store.which.adding Internal parameter to derive which individuals are copy entries
 #' @param list.of.copys Internal parameter to derive further information on the copies individuals
 #' @return Matrix of individuals in the entered database
+#' @examples
+#' data(ex_pop)
+#' derive.loop.elements(ex_pop, bve.database=get.database(ex_pop, gen=2),
+#' bve.class=NULL, bve.avoid.duplicates=TRUE)
+#' @export
+#'
 
 derive.loop.elements <- function(population, bve.database, bve.class, bve.avoid.duplicates, store.adding=FALSE,
                                  store.which.adding=FALSE, list.of.copys=FALSE){
@@ -60,7 +66,9 @@ derive.loop.elements <- function(population, bve.database, bve.class, bve.avoid.
       news <- population$breeding[[k.database[1]]][[k.database[2]+14]][k.database[3]:k.database[4]]
       if(length(news)>0){
         if(bve.avoid.duplicates){
-          to_add <- which(!duplicated(c(news,used), fromLast=TRUE)[1:length(news)])
+          to_add <- which(!duplicated(c(used, news)))
+          to_add <- to_add[to_add > length(used)] - length(used)
+
         } else{
           to_add <- 1:length(news)
         }

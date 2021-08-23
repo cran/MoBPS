@@ -2,11 +2,18 @@
 % Please edit documentation in R/kinship.emp.R
 \name{kinship.emp.fast}
 \alias{kinship.emp.fast}
-\title{Empirical kinship}
+\title{Approximate empirical kinship}
 \usage{
-kinship.emp.fast(animals = NULL, population = NULL, gen = NULL,
-  database = NULL, cohorts = NULL, sym = FALSE, ibd.obs = 50,
-  hbd.obs = 10)
+kinship.emp.fast(
+  animals = NULL,
+  population = NULL,
+  gen = NULL,
+  database = NULL,
+  cohorts = NULL,
+  sym = FALSE,
+  ibd.obs = 50,
+  hbd.obs = 10
+)
 }
 \arguments{
 \item{animals}{List of animals to compute kinship for}
@@ -29,7 +36,7 @@ kinship.emp.fast(animals = NULL, population = NULL, gen = NULL,
 Empirical kinship matrix (IBD-based since Founders) per gen/database/cohort
 }
 \description{
-Function to compute empirical kinship for a set of individuals)
+Function to compute empirical kinship for a set of individuals (not all pairs of individuals are evaluated)
 }
 \examples{
 data(ex_pop)

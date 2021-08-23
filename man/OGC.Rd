@@ -4,7 +4,16 @@
 \alias{OGC}
 \title{Optimal genetic contribution}
 \usage{
-OGC(A, u, Q, cAc = NA, single = TRUE, verbose = FALSE)
+OGC(
+  A,
+  u,
+  Q,
+  cAc = NA,
+  single = TRUE,
+  verbose = FALSE,
+  max_male = Inf,
+  max_female = Inf
+)
 }
 \arguments{
 \item{A}{relationship matrix}
@@ -18,6 +27,10 @@ OGC(A, u, Q, cAc = NA, single = TRUE, verbose = FALSE)
 \item{single}{If FALSE multiple individuals can be removed at the same type (this is faster but potentially inaccurate!)}
 
 \item{verbose}{Set to FALSE to not display any prints}
+
+\item{max_male}{maximum number of male with positive contributions}
+
+\item{max_female}{maximum number of females with positive contributions}
 }
 \value{
 [[1]] Contributions [[2]] expected inbreeding gain

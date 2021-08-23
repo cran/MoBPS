@@ -30,42 +30,118 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param decodeOriginsU Used function for the decoding of genetic origins [[5]]/[[6]]
 #' @param import.position.calculation Function to calculate recombination point into adjacent/following SNP
 #' @param store.effect.freq If TRUE store the allele frequency of effect markers per generation
-#' @param bit.storing Set to TRUE if the RekomBre (not-miraculix! bit-storing is used)
-#' @param nbits Bits available in RekomBre-bit-storing
+#' @param bit.storing Set to TRUE if the MoBPS (not-miraculix! bit-storing is used)
+#' @param nbits Bits available in MoBPS-bit-storing
 #' @param output_compressed Set to TRUE to get a miraculix-compressed genotype/haplotype
+#' @param bv.ignore.traits Vector of traits to ignore in the calculation of the genomic value (default: NULL; Only recommended for high number of traits and experienced users!)
 #' @return [[1]] true genomic value [[2]] allele frequency at QTL markers
+#' @examples
+#' data(ex_pop)
+#' calculate.bv(ex_pop, gen=1, sex=1, nr=1, activ_bv = 1)
+#' @export
 
 calculate.bv <- function(population, gen, sex, nr, activ_bv, import.position.calculation=NULL,
                          decodeOriginsU=decodeOriginsR, store.effect.freq=FALSE,
-                         bit.storing=FALSE, nbits=30, output_compressed=FALSE){
+                         bit.storing=FALSE, nbits=30, output_compressed=FALSE,
+                         bv.ignore.traits=NULL){
 
   # Falls noetig koennten Haplotypen hier erst bestimmt werden.
   if(population$info$miraculix){
     if (requireNamespace("miraculix", quietly = TRUE)) {
-      geno <- miraculix::computeSNPS(population, gen, sex, nr, what="geno")
+      geno_self <- miraculix::computeSNPS(population, gen, sex, nr, what="geno")
     } else{
       stop("Usage of miraculix without being installed!")
     }
-
   } else{
     hap <- compute.snps(population, gen, sex, nr, import.position.calculation=import.position.calculation, decodeOriginsU=decodeOriginsU, bit.storing=bit.storing, nbits=nbits, output_compressed=output_compressed)
-    geno <- colSums(hap)
+    geno_self <- colSums(hap)
+  }
+
+  if(sum(population$info$is.maternal)>0){
+    index_mother <- population$breeding[[gen]][[sex]][[nr]][[8]]
+    if(population$info$miraculix){
+      if (requireNamespace("miraculix", quietly = TRUE)) {
+        geno_mother <- miraculix::computeSNPS(population, index_mother[1], index_mother[2], index_mother[3], what="geno")
+      } else{
+        stop("Usage of miraculix without being installed!")
+      }
+    } else{
+      hap <- compute.snps(population, index_mother[1], index_mother[2], index_mother[3],
+                          import.position.calculation=import.position.calculation, decodeOriginsU=decodeOriginsU,
+                          bit.storing=bit.storing, nbits=nbits, output_compressed=output_compressed)
+      geno_mother <- colSums(hap)
+    }
+  }
+
+  if(sum(population$info$is.paternal)>0){
+    index_father <- population$breeding[[gen]][[sex]][[nr]][[7]]
+    if(population$info$miraculix){
+      if (requireNamespace("miraculix", quietly = TRUE)) {
+        geno_father <- miraculix::computeSNPS(population, index_father[1], index_father[2], index_father[3], what="geno")
+      } else{
+        stop("Usage of miraculix without being installed!")
+      }
+    } else{
+      hap <- compute.snps(population, index_father[1], index_father[2], index_father[3],
+                          import.position.calculation=import.position.calculation, decodeOriginsU=decodeOriginsU,
+                          bit.storing=bit.storing, nbits=nbits, output_compressed=output_compressed)
+      geno_father <- colSums(hap)
+    }
   }
 
   bv_final <- numeric(length(activ_bv))
   snp.before <- population$info$cumsnp
   cindex <- 1
+  back <- 0
+  first <- TRUE
   for(bven in activ_bv){
+
+
+    if(length(intersect(bv.ignore.traits, bven))==1){
+      back <- back +1
+      cindex <- cindex+1
+      next
+
+      # NEED TO ADJUST effect.p.add.same or this!
+    } else{
+      back_old <- back
+      back <- 0
+
+    }
+    if(population$info$is.maternal[bven]){
+      geno <- geno_mother
+    } else if(population$info$is.paternal[bven]){
+      geno <- geno_father
+    } else{
+      geno <- geno_self
+    }
+
+
+
     bv <- population$info$base.bv[bven] # Mittelwert
 
     real.bv.adds <- population$info$real.bv.add[[bven]]
     # Additive Effekte -Vektorielle loesung
     if(length(real.bv.adds)>0){
 
+      recalc <- FALSE
 
-      position <- population$info$effect.p.add[[bven]]
-      neff <- nrow(real.bv.adds)
-      take <- (geno[position] + 2L ) * neff + 1:neff
+      for(temp1 in 0:back_old){
+        recalc <- recalc || (!population$info$effect.p.add.same[bven] || population$info$is.maternal[bven]  || population$info$is.paternal[bven] || (bven>1 && (population$info$is.maternal[bven-1]  || population$info$is.paternal[bven-1])))
+      }
+
+      if(first){
+        recalc <- TRUE
+      }
+      first <- FALSE
+
+      if(recalc){
+        position <- population$info$effect.p.add[[bven]]
+        neff <- nrow(real.bv.adds)
+        take <- (geno[position] + 2L ) * neff + population$info$neff[[bven]]
+      }
+
+
       ## ^ seems to be extremely inefficient!
       if(population$info$bve.poly.factor[bven]==1){
         bv <- bv + population$info$bve.mult.factor[bven] * sum((real.bv.adds[take]))

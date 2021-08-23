@@ -4,10 +4,19 @@
 \alias{compute.costs}
 \title{Compute costs of a breeding program}
 \usage{
-compute.costs(population, phenotyping.costs = 10,
-  genotyping.costs = 100, fix.costs = 0, fix.costs.annual = 0,
-  profit.per.bv = 1, database = NULL, gen = NULL, cohorts = NULL,
-  interest.rate = 1, base.gen = 1)
+compute.costs(
+  population,
+  phenotyping.costs = 10,
+  genotyping.costs = 100,
+  fix.costs = 0,
+  fix.costs.annual = 0,
+  profit.per.bv = 1,
+  database = NULL,
+  gen = NULL,
+  cohorts = NULL,
+  interest.rate = 1,
+  base.gen = 1
+)
 }
 \arguments{
 \item{population}{population-list}
@@ -30,13 +39,15 @@ compute.costs(population, phenotyping.costs = 10,
 
 \item{interest.rate}{Applied yearly interest rate}
 
-\item{base.gen}{Base generation (application of interest rate)
-data(ex_pop)
-compute.costs(ex_pop, gen=1:5)}
+\item{base.gen}{Base generation (application of interest rate)}
 }
 \value{
 Cost-table for selected gen/database/cohorts of a population-list
 }
 \description{
 Function to derive the costs of a breeding program / population-list
+}
+\examples{
+data(ex_pop)
+compute.costs(ex_pop, gen=1:5)
 }

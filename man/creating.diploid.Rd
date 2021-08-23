@@ -4,30 +4,88 @@
 \alias{creating.diploid}
 \title{Generation of the starting population}
 \usage{
-creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
-  bp = NULL, snp.name = NULL, hom0 = NULL, hom1 = NULL,
-  bpcm.conversion = 0, nsnp = 0, nindi = 0, freq = "beta",
-  population = NULL, sex.s = "fixed", add.chromosome = FALSE,
-  generation = 1, class = 0L, sex.quota = 0.5,
-  chromosome.length = NULL, length.before = 5, length.behind = 5,
-  real.bv.add = NULL, real.bv.mult = NULL, real.bv.dice = NULL,
-  snps.equidistant = NULL, change.order = FALSE, bv.total = 0,
-  polygenic.variance = 100, bve.mult.factor = NULL,
-  bve.poly.factor = NULL, base.bv = NULL, add.chromosome.ends = TRUE,
-  new.phenotype.correlation = NULL, new.breeding.correlation = NULL,
-  add.architecture = NULL, snp.position = NULL,
-  position.scaling = FALSE, bit.storing = FALSE, nbits = 30,
-  randomSeed = NULL, miraculix = TRUE, miraculix.dataset = TRUE,
-  n.additive = 0, n.dominant = 0, n.qualitative = 0,
-  n.quantitative = 0, var.additive.l = NULL, var.dominant.l = NULL,
-  var.qualitative.l = NULL, var.quantitative.l = NULL,
-  exclude.snps = NULL, replace.real.bv = FALSE,
-  shuffle.traits = NULL, shuffle.cor = NULL, skip.rest = FALSE,
-  name.cohort = NULL, template.chip = NULL, beta.shape1 = 1,
-  beta.shape2 = 1, time.point = 0, creating.type = 0,
-  trait.name = NULL, share.genotyped = 1, genotyped.s = NULL,
-  map = NULL, remove.invalid.qtl = TRUE, verbose = TRUE,
-  bv.standard = FALSE, mean.target = NULL, var.target = NULL)
+creating.diploid(
+  dataset = NULL,
+  vcf = NULL,
+  chr.nr = NULL,
+  bp = NULL,
+  snp.name = NULL,
+  hom0 = NULL,
+  hom1 = NULL,
+  bpcm.conversion = 0,
+  nsnp = 0,
+  nindi = 0,
+  freq = "beta",
+  population = NULL,
+  sex.s = "fixed",
+  add.chromosome = FALSE,
+  generation = 1,
+  class = 0L,
+  sex.quota = 0.5,
+  chromosome.length = NULL,
+  length.before = 5,
+  length.behind = 5,
+  real.bv.add = NULL,
+  real.bv.mult = NULL,
+  real.bv.dice = NULL,
+  snps.equidistant = NULL,
+  change.order = FALSE,
+  bv.total = 0,
+  polygenic.variance = 100,
+  bve.mult.factor = NULL,
+  bve.poly.factor = NULL,
+  base.bv = NULL,
+  add.chromosome.ends = TRUE,
+  new.phenotype.correlation = NULL,
+  new.residual.correlation = NULL,
+  new.breeding.correlation = NULL,
+  add.architecture = NULL,
+  snp.position = NULL,
+  position.scaling = FALSE,
+  bit.storing = FALSE,
+  nbits = 30,
+  randomSeed = NULL,
+  miraculix = TRUE,
+  miraculix.dataset = TRUE,
+  n.additive = 0,
+  n.equal.additive = 0,
+  n.dominant = 0,
+  n.equal.dominant = 0,
+  n.qualitative = 0,
+  n.quantitative = 0,
+  dominant.only.positive = FALSE,
+  var.additive.l = NULL,
+  var.dominant.l = NULL,
+  var.qualitative.l = NULL,
+  var.quantitative.l = NULL,
+  effect.size.equal.add = 1,
+  effect.size.equal.dom = 1,
+  exclude.snps = NULL,
+  replace.real.bv = FALSE,
+  shuffle.traits = NULL,
+  shuffle.cor = NULL,
+  skip.rest = FALSE,
+  enter.bv = TRUE,
+  name.cohort = NULL,
+  template.chip = NULL,
+  beta.shape1 = 1,
+  beta.shape2 = 1,
+  time.point = 0,
+  creating.type = 0,
+  trait.name = NULL,
+  share.genotyped = 1,
+  genotyped.s = NULL,
+  map = NULL,
+  remove.invalid.qtl = TRUE,
+  verbose = TRUE,
+  bv.standard = FALSE,
+  mean.target = NULL,
+  var.target = NULL,
+  is.maternal = NULL,
+  is.paternal = NULL,
+  vcf.maxsnp = Inf,
+  internal = FALSE
+)
 }
 \arguments{
 \item{dataset}{SNP dataset, use "random", "allhetero" "all0" when generating a dataset via nsnp,nindi}
@@ -54,7 +112,7 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 
 \item{population}{Population list}
 
-\item{sex.s}{Specify with newly added individuals are male (1) or female (2)}
+\item{sex.s}{Specify which newly added individuals are male (1) or female (2)}
 
 \item{add.chromosome}{If TRUE add an additional chromosome to the dataset}
 
@@ -92,7 +150,9 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 
 \item{add.chromosome.ends}{Add chromosome ends as recombination points}
 
-\item{new.phenotype.correlation}{Correlation of the simulated enviromental variance}
+\item{new.phenotype.correlation}{(OLD! - use new.residual.correlation) Correlation of the simulated enviromental variance}
+
+\item{new.residual.correlation}{Correlation of the simulated enviromental variance}
 
 \item{new.breeding.correlation}{Correlation of the simulated genetic variance (child share! heritage is not influenced!}
 
@@ -102,9 +162,9 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 
 \item{position.scaling}{Manual scaling of snp.position}
 
-\item{bit.storing}{Set to TRUE if the RekomBre (not-miraculix! bit-storing is used)}
+\item{bit.storing}{Set to TRUE if the MoBPS (not-miraculix! bit-storing is used)}
 
-\item{nbits}{Bits available in RekomBre-bit-storing}
+\item{nbits}{Bits available in MoBPS-bit-storing}
 
 \item{randomSeed}{Set random seed of the process}
 
@@ -112,13 +172,19 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 
 \item{miraculix.dataset}{Set FALSE to deactive miraculix package for dataset generation}
 
-\item{n.additive}{Number of additive QTL}
+\item{n.additive}{Number of additive QTL with effect size drawn from a gaussian distribution}
 
-\item{n.dominant}{Number of dominante QTL}
+\item{n.equal.additive}{Number of additive QTL with equal effect size (effect.size)}
+
+\item{n.dominant}{Number of dominant QTL with effect size drawn from a gaussian distribution}
+
+\item{n.equal.dominant}{Number of n.equal.dominant QTL with equal effect size}
 
 \item{n.qualitative}{Number of qualitative epistatic QTL}
 
 \item{n.quantitative}{Number of quantitative epistatic QTL}
+
+\item{dominant.only.positive}{Set to TRUE to always asign the heterozygous variant with the higher of the two homozygous effects (e.g. hybrid breeding); default: FALSE}
 
 \item{var.additive.l}{Variance of additive QTL}
 
@@ -127,6 +193,10 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 \item{var.qualitative.l}{Variance of qualitative epistatic QTL}
 
 \item{var.quantitative.l}{Variance of quantitative epistatic QTL}
+
+\item{effect.size.equal.add}{Effect size of the QTLs in n.equal.additive}
+
+\item{effect.size.equal.dom}{Effect size of the QTLs in n.equal.dominant}
 
 \item{exclude.snps}{Marker were no QTL are simulated on}
 
@@ -137,6 +207,8 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 \item{shuffle.cor}{Target Correlation between shuffeled traits}
 
 \item{skip.rest}{Internal variable needed when adding multipe chromosomes jointly}
+
+\item{enter.bv}{Internal parameter}
 
 \item{name.cohort}{Name of the newly added cohort}
 
@@ -156,7 +228,7 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 
 \item{genotyped.s}{Specify with newly added individuals are genotyped (1) or not (0)}
 
-\item{map}{map-file that contains up to 5 colums (Chromsome, SNP-id, Bp-position, M-position, allele freq - Everything not provides it set to NA). A map can be imported via ensembl.map()}
+\item{map}{map-file that contains up to 5 colums (Chromsome, SNP-id, M-position, Bp-position, allele freq - Everything not provides it set to NA). A map can be imported via MoBPSmaps::ensembl.map()}
 
 \item{remove.invalid.qtl}{Set to FALSE to deactive the automatic removal of QTLs on markers that do not exist}
 
@@ -167,6 +239,14 @@ creating.diploid(dataset = NULL, vcf = NULL, chr.nr = NULL,
 \item{mean.target}{Target mean}
 
 \item{var.target}{Target variance}
+
+\item{is.maternal}{Vector coding if a trait is caused by a maternal effect (Default: all FALSE)}
+
+\item{is.paternal}{Vector coding if a trait is caused by a paternal effect (Default: all FALSE)}
+
+\item{vcf.maxsnp}{Maximum number of SNPs to include in the genotype file (default: Inf)}
+
+\item{internal}{Dont touch!}
 }
 \value{
 Population-list

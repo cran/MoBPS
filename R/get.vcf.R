@@ -32,7 +32,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names
 #' @examples
 #' data(ex_pop)
-#' \donttest{get.vcf(path=tempdir(), ex_pop, gen=2)}
+#' data(ex_pop)
+#' \donttest{
+#' file_path <- tempdir()
+#' get.vcf(path=file_path, ex_pop, gen=2)
+#' file.remove(paste0(file_path, ".vcf"))
+#' }
 #' @return VCF-file for in gen/database/cohorts selected individuals
 #' @export
 

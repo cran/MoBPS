@@ -130,6 +130,13 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         stop("No edges detected. No valid simulation!")
       }
 
+      if(length(geninfo$mutation_rate)>0){
+        mutation.rate <- as.numeric(geninfo$mutation_rate)
+      } else{
+        mutation.rate <- 1e-08
+      }
+
+
       major_table <- major <- list()
       n_traits <- length(traitinfo)
       map <- NULL
@@ -153,6 +160,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
 
       fixed_costs <- as.numeric(total$Economy$`Fixed Cost`)
+
       fixed_annual_costs <- 0
       geninfo$`Time Unit`
       interest_rate <- 1+ as.numeric(total$Economy$`Interest Rate`)/100
@@ -1722,6 +1730,11 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                        chr.nr = map[,1], bp=map[,4], snp.name = map[,2],
                                        freq = map[,5], snp.position = if(is.na(map[1,3])) {NULL} else {map[,3]})
 
+        if(length(mutation.rate)>0){
+          population <- set.default(population, parameter.name ="mutation.rate", parameter.value = mutation.rate)
+          population <- set.default(population, parameter.name ="remutation.rate", parameter.value = mutation.rate)
+        }
+
         if(length(founder_pedigree)>0 && sum(founder_pedigree) > sum(diag(founder_pedigree))){
           population <- add.founder.kinship(population, founder.kinship = founder_pedigree)
         }
@@ -2024,6 +2037,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
 
           nodes[[to_node]]$'threshold' <- edges[[index]]$'threshold'
+          nodes[[to_node]]$'bve_solve' <- edges[[index]]$'BVE Method_solver'
           nodes[[to_node]]$'threshold_sign' <- edges[[index]]$'threshold_sign'
           nodes[[to_node]]$'Depth of Pedigree' <- edges[[index]]$'Depth of Pedigree'
         }
@@ -3204,7 +3218,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                 }
 
                 if(bve.breeding.type){
-                  activemmreml <-activesommer <- activemultisommer <- activbglr <- activerrblup <-FALSE
+                  activemmreml <-activesommer <- activemultisommer <- activbglr <- activerrblup <- FALSE
+
+                  bve_solve <- "exact"
+
                   singlestep.active <- FALSE
                   depth <- 0
                   parent_average <- FALSE
@@ -3229,6 +3246,14 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                   if(length(nodes[[groupnr]]$'threshold')>0){
                     threshold <- as.numeric(nodes[[groupnr]]$'threshold')
                   }
+
+                  if(length(nodes[[groupnr]]$'bve_solve')>0){
+                    if(nodes[[groupnr]]$'bve_solve'=="PCG"){
+                      bve_solve <- "pcg"
+                    }
+
+                  }
+
                   if(length(nodes[[groupnr]]$'threshold_sign')>0){
                     threshold_sign <- nodes[[groupnr]]$'threshold_sign'
                   }
@@ -3361,7 +3386,9 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                     offspring.bve.parents.database <- NULL
                   }
                   population <- breeding.diploid(population, breeding.size=breeding.size,
-                                                 bve=(bve&bve_exe), computation.A = computeA,
+                                                 bve=(bve&bve_exe),
+                                                 bve.solve = bve_solve,
+                                                 computation.A = computeA,
                                                  bve.pseudo = pseudo_bve,
                                                  bve.pseudo.accuracy = pseudo_acc,
                                                  offspring.bve.parents.database=offspring.bve.parents.database,

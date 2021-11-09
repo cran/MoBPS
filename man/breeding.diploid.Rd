@@ -6,8 +6,8 @@
 \usage{
 breeding.diploid(
   population,
-  mutation.rate = 10^-5,
-  remutation.rate = 10^-5,
+  mutation.rate = 10^-8,
+  remutation.rate = 10^-8,
   recombination.rate = 1,
   selection.m = NULL,
   selection.f = NULL,
@@ -254,15 +254,16 @@ breeding.diploid(
   avoid.mating.fullsib = FALSE,
   avoid.mating.halfsib = FALSE,
   max.mating.pair = Inf,
-  bve.per.sample.sigma.e = TRUE
+  bve.per.sample.sigma.e = TRUE,
+  bve.solve = "exact"
 )
 }
 \arguments{
 \item{population}{Population list}
 
-\item{mutation.rate}{Mutation rate in each marker (default: 10^-5)}
+\item{mutation.rate}{Mutation rate in each marker (default: 10^-8)}
 
-\item{remutation.rate}{Remutation rate in each marker (default: 10^-5)}
+\item{remutation.rate}{Remutation rate in each marker (default: 10^-8)}
 
 \item{recombination.rate}{Average number of recombination per 1 length unit (default: 1M)}
 
@@ -757,6 +758,8 @@ breeding.diploid(
 \item{max.mating.pair}{Set to the maximum number of matings between two individuals (default: Inf)}
 
 \item{bve.per.sample.sigma.e}{Set to FALSE to deactivate the use of a heritablity based on the number of observations generated per sample}
+
+\item{bve.solve}{Provide solver to be used in BVE (default: "exact" solution via inversion, alt: "pcg", function with inputs A, b and output y_hat)}
 }
 \value{
 Population-list

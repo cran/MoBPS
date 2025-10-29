@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -27,11 +27,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
-#' @param chromosomen Beschraenkung des Genotypen auf bestimmte Chromosomen (default: 1)
+#' @param id Individual IDs to search/collect in the database
+#' @param chromosome Limit the genotype output to a selected chromosome (default: "all")
 #' @param non.genotyped.as.missing Set to TRUE to replaced non-genotyped entries with "./."
 #' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names
+#' @param file.append Set extend an existing vcf-file ((without writting a header))
 #' @examples
-#' data(ex_pop)
 #' data(ex_pop)
 #' \donttest{
 #' file_path <- tempdir()
@@ -41,33 +42,53 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @return VCF-file for in gen/database/cohorts selected individuals
 #' @export
 
-get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, chromosomen="all",
-                    non.genotyped.as.missing=FALSE, use.id = FALSE){
+get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, id = NULL,
+                    chromosome="all",
+                    non.genotyped.as.missing=FALSE, use.id = FALSE,
+                    file.append = FALSE){
 
-  haplo <- get.haplo(population, database=database, gen=gen, cohorts=cohorts, chromosomen=chromosomen, export.alleles=FALSE)
+  haplo <- get.haplo(population, database=database, gen=gen, cohorts=cohorts, id = id, chromosome=chromosome, export.alleles=FALSE)
   # haplo <- get.haplo(population, gen=1)
   if(length(path)==0){
     path <- "population.vcf"
   } else{
     path <- paste0(path,".vcf")
   }
-  chr.nr <- sum(population$info$snp)
+  chr.nr <- numeric(sum(population$info$snp))
   start <- 1
   for(index in 1:length(population$info$snp)){
     if(population$info$snp[index]>0){
-      chr.nr[start:(start+population$info$snp[index]-1)] <- index
+
+      if(length(population$info$chromosome.name)>=index){
+        chr.nr[start:(start+population$info$snp[index]-1)] <- population$info$chromosome.name[index]
+      } else{
+        chr.nr[start:(start+population$info$snp[index]-1)] <- index
+      }
+
       start <- start + population$info$snp[index]
     }
   }
+
+
   bp <- population$info$bp
   snpname <- population$info$snp.name
   ref <- population$info$snp.base[1,]
   alt <- population$info$snp.base[2,]
 
-  vcfgeno <- matrix(paste0(haplo[,(1:(ncol(haplo)/2))*2], "|", haplo[,(1:(ncol(haplo)/2))*2-1]), ncol=ncol(haplo)/2)
+  if(chromosome[1]!="all"){
+
+    keep = get.map(population)[,1] %in% chromosome
+    bp <- population$info$bp[keep]
+    snpname <- population$info$snp.name[keep]
+    ref <- population$info$snp.base[1,][keep]
+    alt <- population$info$snp.base[2,][keep]
+
+    chr.nr = chr.nr[keep]
+  }
+  vcfgeno <- matrix(paste0(haplo[,(1:(ncol(haplo)/2))*2-1], "|", haplo[,(1:(ncol(haplo)/2))*2]), ncol=ncol(haplo)/2)
 
   if(non.genotyped.as.missing){
-    is_genotyped <- get.genotyped.snp(population, gen=gen, database = database, cohorts=cohorts)
+    is_genotyped <- get.genotyped.snp(population, gen=gen, database = database, cohorts=cohorts, id = id)
 
     if(sum(!is_genotyped)>0){
       vcfgeno[!is_genotyped] <- "./."
@@ -82,27 +103,44 @@ get.vcf <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL
   alt[alt==1] <- "C"
   options(scipen=999)
   vcfgenofull <- cbind(chr.nr, as.numeric(bp), snpname, ref, alt, ".", "PASS", ".", "GT", vcfgeno)
-  vcfgenofull <- rbind(c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", get.pedigree(population, database=database, gen=gen, cohorts = cohorts, id=use.id)[,1]),vcfgenofull)
+
+  if(!file.append){
+    vcfgenofull <- rbind(c("#CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", get.pedigree(population, database=database, gen=gen, cohorts = cohorts, id = id, use.id=use.id)[,1]),vcfgenofull)
+  }
 
   headerfile <- rbind(
     "##fileformat=VCFv4.2",
     gsub("-", "", paste0("##filedate=",  Sys.Date())),
-    paste0("##source='MoBPS_", utils::packageVersion("MoBPS"),"'"),
+    paste0('##source="MoBPS_', utils::packageVersion("MoBPS"),'"'),
     '##FILTER=<ID=PASS,Description="all filters passed">'
   )
 
   nchr <- unique(chr.nr)
-  contigs <- numeric(length(nchr))
-  for(index in 1:length(nchr)){
-    contigs[index] <- paste0("##contig=<ID=", nchr[index],",length=", max(as.numeric(bp)[chr.nr==nchr[index]]),">")
+
+  if(length(population$info$vcf_header)>0){
+    contigs <- character(length(population$info$vcf_header[[1]]@header@listData$contig@rownames))
+    for(index in 1:length(contigs)){
+      contigs[index] <- paste0('##contig=<ID=', population$info$vcf_header[[1]]@header@listData$contig@rownames[index],',length=', population$info$vcf_header[[1]]@header@listData$contig@listData$length[index],'>')
+    }
+  }else{
+    warning("No vcf header present - using last SNP position as end of chromosome for contig dictionary. This may require manual changes for future use of the vcf!")
+    contigs <- character(length(nchr))
+    for(index in 1:length(nchr)){
+      contigs[index] <- paste0('##contig=<ID=', nchr[index],',length=', max(as.numeric(bp)[chr.nr==nchr[index]]),'>')
+    }
+  }
+  headerfile <- rbind(headerfile, t(t(contigs)),     '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">')
+
+
+  if(!file.append){
+    utils::write.table(headerfile, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE)
   }
 
-  headerfile <- rbind(headerfile, t(t(contigs)),     "##FORMAT=<ID=GT,Number=1,Type=String,Description='Genotype'>")
-
-
-
-  utils::write.table(headerfile, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE)
-  utils::write.table(vcfgenofull, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE, append = TRUE, sep="\t")
+  if (requireNamespace("data.table", quietly = TRUE)) {
+    data.table::fwrite(file=path, vcfgenofull, sep = "\t", col.names = FALSE, append = TRUE)
+  } else{
+    utils::write.table(vcfgenofull, file=path, quote=FALSE, col.names = FALSE, row.names = FALSE, append = TRUE, sep="\t")
+  }
 }
 
 

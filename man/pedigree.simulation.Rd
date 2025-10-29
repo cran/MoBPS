@@ -26,7 +26,6 @@ pedigree.simulation(
   real.bv.mult = NULL,
   real.bv.dice = NULL,
   snps.equidistant = NULL,
-  change.order = FALSE,
   bv.total = 0,
   polygenic.variance = 100,
   bve.mult.factor = NULL,
@@ -65,6 +64,8 @@ pedigree.simulation(
   time.point = 0,
   creating.type = 0,
   trait.name = NULL,
+  trait.cor = NULL,
+  trait.cor.include = NULL,
   share.genotyped = 1,
   genotyped.s = NULL,
   map = NULL,
@@ -73,9 +74,12 @@ pedigree.simulation(
   bv.standard = FALSE,
   mean.target = NULL,
   var.target = NULL,
+  progress.bar = TRUE,
   is.maternal = NULL,
   is.paternal = NULL,
-  vcf.maxsnp = Inf
+  vcf.maxsnp = Inf,
+  halffounder = TRUE,
+  output.extended = FALSE
 )
 }
 \arguments{
@@ -89,7 +93,7 @@ pedigree.simulation(
 
 \item{vcf}{Path to a vcf-file used as input genotypes (correct haplotype phase is assumed!)}
 
-\item{chr.nr}{Vector containing the assosiated chromosome for each marker (default: all on the same)}
+\item{chr.nr}{Vector containing the associated chromosome for each marker (default: all on the same)}
 
 \item{bp}{Vector containing the physical position (bp) for each marker (default: 1,2,3...)}
 
@@ -120,8 +124,6 @@ pedigree.simulation(
 \item{real.bv.dice}{Multi-marker effects}
 
 \item{snps.equidistant}{Use equidistant markers (computationally faster! ; default: TRUE)}
-
-\item{change.order}{If TRUE sort markers according to given marker positions}
 
 \item{bv.total}{Number of traits (If more than traits via real.bv.X use traits with no directly underlying QTL)}
 
@@ -179,7 +181,7 @@ pedigree.simulation(
 
 \item{shuffle.traits}{Combine different traits into a joined trait}
 
-\item{shuffle.cor}{Target Correlation between shuffeled traits}
+\item{shuffle.cor}{Target Correlation between shuffled traits}
 
 \item{skip.rest}{Internal variable needed when adding multipe chromosomes jointly}
 
@@ -199,6 +201,10 @@ pedigree.simulation(
 
 \item{trait.name}{Name of the trait generated}
 
+\item{trait.cor}{Target correlation between QTL-based traits (underlying true genomic values)}
+
+\item{trait.cor.include}{Vector of traits to be included in the modelling of corrlated traits (default: all - needs to match with trait.cor)}
+
 \item{share.genotyped}{Share of individuals genotyped in the founders}
 
 \item{genotyped.s}{Specify with newly added individuals are genotyped (1) or not (0)}
@@ -215,11 +221,17 @@ pedigree.simulation(
 
 \item{var.target}{Target variance}
 
+\item{progress.bar}{Set to FALSE to not use progress bars in the simulation (Keep log-files lean!)}
+
 \item{is.maternal}{Vector coding if a trait is caused by a maternal effect (Default: all FALSE)}
 
 \item{is.paternal}{Vector coding if a trait is caused by a paternal effect (Default: all FALSE)}
 
 \item{vcf.maxsnp}{Maximum number of SNPs to include in the genotype file (default: Inf)}
+
+\item{halffounder}{Set to FALSE to make individuals with only one known parent founders (default: TRUE; will additional generate a missing unrelated parent)}
+
+\item{output.extended}{Set TRUE to export more information about the population list}
 
 \item{add.chromosome}{If TRUE add an additional chromosome to the dataset}
 }
@@ -239,5 +251,5 @@ pedigree <- matrix(c(1,0,0,
 7,1,3,
 8,4,6,
 9,4,7), ncol=3, byrow=TRUE)
-population <- pedigree.simulation(pedigree, nsnp=1000)
+population = pedigree.simulation(pedigree, nsnp = 100)
 }

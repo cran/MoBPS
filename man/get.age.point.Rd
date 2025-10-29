@@ -9,7 +9,8 @@ get.age.point(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  use.id = FALSE
+  id = NULL,
+  use.id = TRUE
 )
 }
 \arguments{
@@ -21,13 +22,15 @@ get.age.point(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
+\item{id}{Individual IDs to search/collect in the database}
+
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)}
 }
 \value{
 Time point selected gen/database/cohorts-individuals are born
 }
 \description{
-Function to devide age point for each individual (Same as time.point unless copy.individual is used for aging)
+Function to derive age point for each individual (Same as time.point unless copy.individual is used for aging)
 }
 \examples{
 data(ex_pop)

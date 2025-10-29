@@ -10,11 +10,13 @@ get.pca(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
+  id = NULL,
   coloring = "group",
   components = c(1, 2),
   plot = TRUE,
   pch = 1,
-  export.color = FALSE
+  export.color = FALSE,
+  use.id = FALSE
 )
 }
 \arguments{
@@ -28,6 +30,8 @@ get.pca(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
+\item{id}{Individual IDs to search/collect in the database}
+
 \item{coloring}{Coloring by "group", "sex", "plain"}
 
 \item{components}{Default: c(1,2) for the first two principle components}
@@ -37,9 +41,11 @@ get.pca(
 \item{pch}{Point type in the PCA plot}
 
 \item{export.color}{Set to TRUE to export the per point coloring}
+
+\item{use.id}{Set TRUE to display IDs instead of dots in the PCA plot}
 }
 \value{
-Genotype data for in gen/database/cohorts selected individuals
+Principle components of gen/database/cohorts selected individuals
 }
 \description{
 Function to perform a principle component analysis

@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,24 +26,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param id Individual IDs to search/collect in the database
 #' @return Info list [[1]] phenotypes [[2]] genomic values [[3]] Z [[4/5/6]] additive/epistatic/dice marker effects
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
 #' @examples
 #' data(ex_pop)
 #' get.infos(ex_pop, gen=2)
 #' @export
 
-get.infos<- function(population, database=NULL, gen=NULL, cohorts=NULL, use.id=FALSE){
+get.infos<- function(population, database=NULL, gen=NULL, cohorts=NULL, id = NULL, use.id=TRUE){
 
   if(length(population$info$origin.gen)>0){
     population$info$origin.gen <- as.integer(population$info$origin.gen)
   } else{
     population$info$origin.gen <- 1:64L
   }
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
-  pheno <- as.numeric(get.pheno(population, database=database, use.id=use.id)[-1])
-  bv <- as.numeric(get.bv(population, database=database, use.id=use.id)[-1])
+  pheno <- get.pheno(population, database=database, use.id=use.id)
+  bv <- get.bv(population, database=database, use.id=use.id)
 
   size <- database[,4]-database[,3]+1
   cindex <- 1
@@ -64,7 +65,7 @@ get.infos<- function(population, database=NULL, gen=NULL, cohorts=NULL, use.id=F
   } else{
     Z <- matrix(NA, nrow=sum(population$info$snp), ncol=nrow(loop_elements))
     for(index in 1:nrow(loop_elements)){
-      Z[,index] <- colSums(compute.snps(population, loop_elements[index,1] , loop_elements[index,2] , loop_elements[index,3], decodeOriginsU=MoBPS::decodeOriginsR))
+      Z[,index] <- colSums(computing.snps(population, loop_elements[index,1] , loop_elements[index,2] , loop_elements[index,3], decodeOriginsU=MoBPS::decodeOriginsR))
 
     }
   }

@@ -9,7 +9,8 @@ get.selectionbve(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  use.id = FALSE
+  id = NULL,
+  use.id = TRUE
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ get.selectionbve(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
+\item{id}{Individual IDs to search/collect in the database}
+
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)}
 }
 \value{
 Last applied selection index for in gen/database/cohorts selected individuals
@@ -31,5 +34,5 @@ Function to export last breeding values based on the selection index
 }
 \examples{
 data(ex_pop)
-get.selectionindex(ex_pop, gen=2)
+get.selectionbve(ex_pop, gen=2)
 }

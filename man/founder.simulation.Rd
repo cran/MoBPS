@@ -29,7 +29,6 @@ founder.simulation(
   length.before = 5,
   length.behind = 5,
   snps.equidistant = NULL,
-  change.order = FALSE,
   snp.position = NULL,
   position.scaling = FALSE,
   bit.storing = FALSE,
@@ -42,11 +41,21 @@ founder.simulation(
   beta.shape2 = 1,
   map = NULL,
   verbose = TRUE,
-  vcf.maxsnp = Inf
+  vcf.maxsnp = Inf,
+  plot.ld = TRUE,
+  plot.allele.freq = TRUE,
+  xlim = NULL,
+  ylim = NULL,
+  nclass = 20,
+  ylim.af = NULL,
+  mutation.rate = 10^-8,
+  remutation.rate = 10^-8,
+  estimate.ne = TRUE,
+  estimate.ld = TRUE
 )
 }
 \arguments{
-\item{nindi}{number of inidividuals to generate in a random dataset}
+\item{nindi}{number of individuals to generate in a random dataset}
 
 \item{sex.quota}{Share of newly added female individuals (deterministic if sex.s="fixed", alt: sex.s="random")}
 
@@ -70,7 +79,7 @@ founder.simulation(
 
 \item{vcf}{Path to a vcf-file used as input genotypes (correct haplotype phase is assumed!)}
 
-\item{chr.nr}{Vector containing the assosiated chromosome for each marker (default: all on the same)}
+\item{chr.nr}{Vector containing the associated chromosome for each marker (default: all on the same)}
 
 \item{bp}{Vector containing the physical position (bp) for each marker (default: 1,2,3...)}
 
@@ -93,8 +102,6 @@ founder.simulation(
 \item{length.behind}{Length after the last SNP of the dataset (default: 5)}
 
 \item{snps.equidistant}{Use equidistant markers (computationally faster! ; default: TRUE)}
-
-\item{change.order}{If TRUE sort markers according to given marker positions}
 
 \item{snp.position}{Location of each marker on the genetic map}
 
@@ -121,6 +128,26 @@ founder.simulation(
 \item{verbose}{Set to FALSE to not display any prints}
 
 \item{vcf.maxsnp}{Maximum number of SNPs to include in the genotype file (default: Inf)}
+
+\item{plot.ld}{Set FALSE to not generate the LD plot (default; TRUE)}
+
+\item{plot.allele.freq}{Set FALSE to not generate the allele frequency spectrum plot (default: TRUE)}
+
+\item{xlim}{Axis limits for the x-axis in the LD plot (default: NULL)}
+
+\item{ylim}{Axis limits for the y-axis in the LD plot (default: NULL)}
+
+\item{nclass}{Number of classes to consider in the allele frequency spectrum plot (default: 20)}
+
+\item{ylim.af}{Axis limits for the allele frequency spectrum plot (default: NULL)}
+
+\item{mutation.rate}{Mutation rate in each marker (default: 10^-8)}
+
+\item{remutation.rate}{Remutation rate in each marker (default: 10^-8)}
+
+\item{estimate.ne}{Set to FALSE to not estimate the effective population size (default: TRUE)}
+
+\item{estimate.ld}{Set to FALSE to not estimate the ld decay (default: TRUE)}
 }
 \description{
 Function to generate founder genotypes

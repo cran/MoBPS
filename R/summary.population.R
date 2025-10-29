@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @examples
 #' data(ex_pop)
 #' summary(ex_pop)
-#' @return Summary of the population list including number of individuals, genone length and trait overview
+#' @return Summary of the population list including number of individuals, genome length and trait overview
 #' @export
 
 
@@ -100,5 +100,21 @@ summary.population <- function(object, ...){
     }
   }
 
+  if(length(population$info$comp.times.general)>0){
+    comp.times.general = round(colSums(population$info$comp.times.general), digits =1)
+    comp.times.creating = round(colSums(population$info$comp.times.creating), digits =1)
+
+    cat(paste0("Total time spent for generation: ", comp.times.general[7] + comp.times.creating[6], " seconds.\n\n"))
+    cat("Time spent per step: \n")
+    if((comp.times.creating[6])>0) cat(paste0((comp.times.creating[6]), " seconds for creation of founder population.\n"))
+    if((comp.times.general[1])>0) cat(paste0((comp.times.general[1]), "seconds for initialization.\n"))
+    if(comp.times.general[2]>0) cat(paste0( comp.times.general[2], " seconds for calculation of true genomic values.\n"))
+    if(comp.times.general[3]>0) cat(paste0( comp.times.general[3], " seconds for phenotyping.\n"))
+    if(comp.times.general[4]>0) cat(paste0( comp.times.general[4]," second for breeding value estimation.\n"))
+    if(comp.times.general[5]>0) cat(paste0( comp.times.general[5], " seconds for selection.\n"))
+    if(comp.times.general[6]>0) cat(paste0( comp.times.general[6], " seconds for generation of new individuals.\n"))
+  }
+
 
 }
+

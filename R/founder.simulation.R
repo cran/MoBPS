@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,7 +26,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param n.gen Number of generations to simulate (default: 100)
 #' @param dataset SNP dataset, use "random", "allhetero" "all0" when generating a dataset via nsnp,nindi
 #' @param nsnp number of markers to generate in a random dataset
-#' @param nindi number of inidividuals to generate in a random dataset
+#' @param nindi number of individuals to generate in a random dataset
 #' @param sex.quota Share of newly added female individuals (deterministic if sex.s="fixed", alt: sex.s="random")
 #' @param nfinal Number of final individuals to include (default: nindi)
 #' @param sex.quota.final Share of female individuals in the final generation
@@ -41,7 +41,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param length.behind Length after the last SNP of the dataset (default: 5)
 #' @param snps.equidistant Use equidistant markers (computationally faster! ; default: TRUE)
 #' @param snp.position Location of each marker on the genetic map
-#' @param change.order If TRUE sort markers according to given marker positions
 #' @param bit.storing Set to TRUE if the MoBPS (not-miraculix! bit-storing is used)
 #' @param nbits Bits available in MoBPS-bit-storing
 #' @param randomSeed Set random seed of the process
@@ -51,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param position.scaling Manual scaling of snp.position
 #' @param vcf Path to a vcf-file used as input genotypes (correct haplotype phase is assumed!)
 #' @param vcf.maxsnp Maximum number of SNPs to include in the genotype file (default: Inf)
-#' @param chr.nr Vector containing the assosiated chromosome for each marker (default: all on the same)
+#' @param chr.nr Vector containing the associated chromosome for each marker (default: all on the same)
 #' @param bp Vector containing the physical position (bp) for each marker (default: 1,2,3...)
 #' @param bpcm.conversion Convert physical position (bp) into a cM position (default: 0 - not done)
 #' @param snp.name Vector containing the name of each marker (default ChrXSNPY - XY chosen accordingly)
@@ -60,6 +59,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param beta.shape1 First parameter of the beta distribution for simulating allele frequencies
 #' @param beta.shape2 Second parameter of the beta distribution for simulating allele frequencies
 #' @param map map-file that contains up to 5 colums (Chromsome, SNP-id, M-position, Bp-position, allele freq - Everything not provides it set to NA). A map can be imported via MoBPSmaps::ensembl.map()
+#' @param plot.ld Set FALSE to not generate the LD plot (default; TRUE)
+#' @param plot.allele.freq Set FALSE to not generate the allele frequency spectrum plot (default: TRUE)
+#' @param xlim Axis limits for the x-axis in the LD plot (default: NULL)
+#' @param ylim Axis limits for the y-axis in the LD plot (default: NULL)
+#' @param ylim.af Axis limits for the allele frequency spectrum plot (default: NULL)
+#' @param nclass Number of classes to consider in the allele frequency spectrum plot (default: 20)
+#' @param mutation.rate Mutation rate in each marker (default: 10^-8)
+#' @param remutation.rate Remutation rate in each marker (default: 10^-8)
+#' @param estimate.ne Set to FALSE to not estimate the effective population size (default: TRUE)
+#' @param estimate.ld Set to FALSE to not estimate the ld decay (default: TRUE)
 #' @param verbose Set to FALSE to not display any prints
 #' @examples
 #' population <- founder.simulation(nindi=100, nsnp=1000, n.gen=5)
@@ -73,7 +82,6 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
                                freq="beta", sex.s="fixed",
                                chromosome.length=NULL,length.before=5, length.behind=5,
                                snps.equidistant=NULL,
-                               change.order=FALSE,
                                snp.position=NULL,
                                position.scaling=FALSE,
                                bit.storing=FALSE,
@@ -85,7 +93,17 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
                                beta.shape2=1,
                                map=NULL,
                                verbose=TRUE,
-                               vcf.maxsnp=Inf){
+                               vcf.maxsnp=Inf,
+                               plot.ld = TRUE,
+                               plot.allele.freq = TRUE,
+                               xlim = NULL,
+                               ylim = NULL,
+                               nclass = 20,
+                               ylim.af = NULL,
+                               mutation.rate = 10^-8,
+                               remutation.rate = 10^-8,
+                               estimate.ne = TRUE,
+                               estimate.ld = TRUE){
 
 
   if(length(nfinal)==0){
@@ -112,7 +130,6 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
                                  chromosome.length = chromosome.length,
                                  length.before = length.before, length.behind = length.behind,
                                  snps.equidistant = snps.equidistant,
-                                 change.order = change.order,
                                  snp.position = snp.position,
                                  bit.storing = bit.storing,
                                  nbits = nbits, randomSeed = randomSeed,
@@ -122,7 +139,7 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
                                  beta.shape1 = beta.shape1,
                                  beta.shape2 = beta.shape2,
                                  map = map,
-                                 verbose=verbose,
+                                 verbose=FALSE,
                                  vcf.maxsnp = vcf.maxsnp)
 
 
@@ -138,7 +155,10 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
         utils::setTxtProgressBar(pb, index)
       }
 
-      population <- breeding.diploid(population, breeding.size = nindi, breeding.sex = sex.quota, verbose = verbose, display.progress=display.progress)
+      population <- breeding.diploid(population, breeding.size = nindi, breeding.sex = sex.quota, verbose = FALSE,
+                                     mutation.rate = mutation.rate,
+                                     remutation.rate = remutation.rate,
+                                     display.progress=display.progress)
 
       if(index==3){
         size1 <- utils::object.size(population$breeding[[1]])
@@ -159,7 +179,10 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
     utils::setTxtProgressBar(pb, n.gen)
   }
 
-  population <- breeding.diploid(population, breeding.size = nfinal, breeding.sex = sex.quota.final, verbose = verbose, display.progress=display.progress)
+  population <- breeding.diploid(population, breeding.size = nfinal, breeding.sex = sex.quota.final, verbose = FALSE,
+                                 mutation.rate = mutation.rate,
+                                 remutation.rate = remutation.rate,
+                                 display.progress=display.progress)
 
   if(verbose && display.progress){
     close(pb)
@@ -169,28 +192,48 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
 
   if(plot){
     oldpar <- graphics::par(no.readonly = TRUE)
-    on.exit(graphics::par(oldpar))
-    graphics::par(mfrow=c(1,2))
+    on.exit(    tryCatch(  {
+      graphics::par(oldpar)
+    },
+    error = function(e) {}))
+    graphics::par(mfrow=c(1, plot.ld + plot.allele.freq ))
   }
 
   geno <- get.geno(population, gen = nrow(population$info$size))
-  ldinfo <- ld.decay(population, genotype.dataset = geno, type="cm", plot = plot)
-  p_i <- rowMeans(geno)/2
 
-  if(plot){
-    graphics::hist(p_i[p_i!=0 & p_i !=1], nclass=20, xlab="allele frequency spectrum", main="Allele frequency spectrum")
-  }
+  p_i <- rowMeans(geno)/2
 
   if(verbose){ cat(paste0(sum(p_i==0 | p_i==1), " of ", length(p_i), " markers are fixated.\n"))}
 
-  effs <- numeric(length(ldinfo[[3]]$x))
-  for(index in 1:length(ldinfo[[3]]$x)){
-    effs[index] <- effective.size(ldinfo[[3]]$y[index],
-                                  dist = ldinfo[[3]]$x[index],
-                                  n = nfinal)
+  if(estimate.ld){
+
+    ldinfo <- ld.decay(population, genotype.dataset = geno, type="cm", xlim = xlim, ylim = ylim,
+                       plot = plot && plot.ld)
+
+
+    if(plot && plot.allele.freq){
+
+      tryCatch(  {
+        graphics::hist(p_i[p_i!=0 & p_i !=1], xlab="allele frequency spectrum", main="Allele frequency spectrum",
+                       nclass = nclass, ylim = ylim.af)
+      },
+      error = function(e) {})
+
+
+    }
   }
 
-  if(verbose) {cat(paste0("Effective population size is estimated to be around ", ceiling(mean(effs[-(1:10)])), ".\n"))}
+  if(estimate.ne){
+    effs <- numeric(length(ldinfo[[3]]$x))
+    for(index in 1:length(ldinfo[[3]]$x)){
+      effs[index] <- effective.size(ldinfo[[3]]$y[index],
+                                    dist = ldinfo[[3]]$x[index],
+                                    n = nfinal)
+    }
+
+    if(verbose) {cat(paste0("Effective population size is estimated to be around ", ceiling(mean(effs[-(1:10)])), ".\n"))}
+
+  }
 
   haplo <- get.haplo(population, gen = nrow(population$info$size))
   map <- get.map(population)
@@ -198,7 +241,7 @@ founder.simulation <- function(nindi=100, sex.quota=0.5, nsnp = 0, n.gen=100, nf
   storage.mode(haplo) <- "integer"
 
   if(big.output){
-    pedigree <- kinship.exp(population, gen = nrow(population$info$size), depth.pedigree = depth.pedigree, verbose = verbose)
+    pedigree <- kinship.exp(population, gen = nrow(population$info$size), depth.pedigree = depth.pedigree, verbose = verbose, mult=2)
     return(list(haplo, map, population, pedigree))
   } else{
     return(haplo)

@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,11 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #' Derive time of culling
 #'
-#' Function to devide the time of culling for all individuals
+#' Function to derive the time of culling for all individuals
 #' @param population Population list
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param id Individual IDs to search/collect in the database
 #' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
 #' @examples
 #' data(ex_pop)
@@ -33,9 +34,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @return Time of death of in gen/database/cohorts selected individuals
 #' @export
 
-get.cullingtime <- function(population, database=NULL, gen=NULL, cohorts=NULL, use.id=FALSE){
+get.cullingtime <- function(population, database=NULL, gen=NULL, cohorts=NULL, id = NULL, use.id=FALSE){
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
   n.animals <- sum(database[,4] - database[,3] +1)
   data <- rep(0, n.animals)

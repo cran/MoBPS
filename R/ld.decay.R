@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -24,35 +24,44 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' Generate LD pot
 #' @param population Population list
 #' @param genotype.dataset Genotype dataset (default: NULL - just to save computation time when get.geno was already run)
-#' @param dist Manuel input of marker distances to analyse
+#' @param dist Manuel input of marker distances to analyze
 #' @param step Stepsize to calculate LD
 #' @param max Maximum distance between markers to consider for LD-plot
 #' @param max.cases Maximum number of marker pairs to consider of each distance (default: 100; randomly sampled!)
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
-#' @param chromosomen Only consider a specific chromosome in calculations (default: 1)
+#' @param chromosome Only consider a specific chromosome in calculations (default: 1)
 #' @param type Compute LD decay according to following distance measure between markers (default: "snp", alt: "bp", "cM")
 #' @param plot Set to FALSE to not generate an LD plot
+#' @param xlim Axis limits for the x-axis in the LD plot
+#' @param ylim Axis limits for the y-axis in the LD plot
 #' @examples
 #' data(ex_pop)
 #' ld.decay(population=ex_pop, gen=5)
 #' @return LD-decay plot for in gen/database/cohorts selected individuals
 #' @export
 
-ld.decay <- function(population, genotype.dataset=NULL, chromosomen=1, dist =NULL,  step=5, max=500, max.cases = 100, database=NULL, gen=NULL, cohorts= NULL,
-                     type="snp", plot=FALSE){
-  max <- min(population$info$snp[chromosomen]-1, max)
+ld.decay <- function(population, genotype.dataset=NULL, chromosome=1, dist =NULL,  step=5, max=500, max.cases = 100, database=NULL, gen=NULL, cohorts= NULL,
+                     type="snp", plot=FALSE, xlim = NULL, ylim = NULL){
+
   if(length(genotype.dataset)==0){
-    dataset <- t(get.geno(population, chromosomen = chromosomen, gen=gen, database=database,cohorts=cohorts))
+    dataset <- t(get.geno(population, chromosome = chromosome, gen=gen, database=database,cohorts=cohorts))
   } else{
     dataset <- t(genotype.dataset)
   }
 
+  nsnp = ncol(dataset)
+  max <- min(nsnp-1, max)
   if(length(dist)>0){
     calc <- dist
   } else{
-    calc <- unique(c(1:(step-1),seq(from=step, to=max, by=step)))
+    if(step>1){
+      calc <- unique(c(1:(step-1),seq(from=step, to=max, by=step)))
+    } else{
+      calc <- seq(from=step, to=max, by=step)
+    }
+
   }
   if(type=="snp"){
     ld <- numeric(length(calc))
@@ -64,7 +73,7 @@ ld.decay <- function(population, genotype.dataset=NULL, chromosomen=1, dist =NUL
   for(index in 1:length(calc)){
 
 
-    cases <- 1:(population$info$snp[chromosomen]-calc[index])
+    cases <- 1:(nsnp-calc[index])
     if(length(cases)> max.cases){
       cases <- sample(cases, max.cases)
     }
@@ -90,8 +99,6 @@ ld.decay <- function(population, genotype.dataset=NULL, chromosomen=1, dist =NUL
 
   if(type=="snp"){
 
-
-
     smooth1 <- stats::ksmooth(calc[1:(length(calc)/5)], ld[1:(length(calc)/5)], bandwidth = step*3, kernel="normal", x.points = calc[1:(length(calc)/5)])
     smooth2 <- stats::ksmooth(calc[-(1:(length(calc)/5))], ld[-(1:(length(calc)/5))], bandwidth = step*10 , kernel="normal", x.points = calc[-(1:(length(calc)/5))])
     smooth1$x[1] <- calc[1]
@@ -99,10 +106,16 @@ ld.decay <- function(population, genotype.dataset=NULL, chromosomen=1, dist =NUL
     smooth1$x <- c(smooth1$x, smooth2$x)
     smooth1$y <-c(smooth1$y, smooth2$y)
 
-
     if(plot){
-      graphics::plot(calc, ld, xlab="distance in SNP", ylab=expression(r^2), main=paste0("LD structure on chromosome ", chromosomen))
-      graphics::lines(smooth1, col="red", lwd=2)
+
+      tryCatch(  {
+        graphics::plot(calc, ld, xlab="distance in SNP", ylab=expression(r^2), main=paste0("LD structure on chromosome ", chromosome),
+                       ylim = ylim, xlim = xlim)
+        graphics::lines(smooth1, col="red", lwd=2)
+      },
+      error = function(e) {})
+
+
     }
 
 
@@ -124,7 +137,14 @@ ld.decay <- function(population, genotype.dataset=NULL, chromosomen=1, dist =NUL
       type <- "Morgan"
     }
     if(plot){
-      graphics::plot(smooth1 , xlab=paste0("distance in ", type), ylab=expression(r^2), main=paste0("LD structure on chromosome ", chromosomen))
+
+      tryCatch(  {
+        graphics::plot(smooth1 , xlab=paste0("distance in ", type), ylab=expression(r^2), main=paste0("LD structure on chromosome ", chromosome),
+                       ylim = ylim, xlim = xlim)
+      },
+      error = function(e) {})
+
+
     }
 
 

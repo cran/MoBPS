@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -29,8 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param depth.pedigree Depth of the pedigree in generations
 #' @param start.kinship Relationship matrix of the individuals in the first considered generation
 #' @param elements Vector of individuals from the database to include in pedigree matrix
-#' @param mult Multiplicator of kinship matrix (default: 2)
+#' @param mult Multiplicator of kinship matrix (default: 1; set to 2 for a pedigree relationship matrix)
 #' @param storage.save Lower numbers will lead to less memory but slightly higher computing time (default: 1.5, min: 1)
+#' @param elements.copy Set to TRUE to automatically remove duplicated entries for individuals/database from the output matrix (default: FALSE)
+#' @param include.error Set to FALSE to ignore/correct any errors in the pedigree
 #' @param verbose Set to FALSE to not display any prints
 #' @examples
 #' data(ex_pop)
@@ -42,10 +44,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth.pedigree=7,
                                start.kinship=NULL,
                                elements = NULL,
-                               mult = 2,
-                               storage.save=1.5,
-                               verbose=TRUE){
+                               mult = 1,
+                               storage.save=1.05,
+                               verbose=TRUE,
+                        include.error = TRUE,
+                        elements.copy = FALSE){
 
+  t1 <- as.numeric(Sys.time())
   int_mult <- as.integer(2^29)
   int_mult2 <- as.integer(2^28)
   database <- get.database(population, gen=gen, database=database, cohorts=cohorts)
@@ -89,15 +94,21 @@ kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth
     elements <- elements_new
 
   } else{
-    elements <- 1:sum(database[,4]-database[,3]+1)
+
+    if(elements.copy){
+      elements = which(!duplicated(get.id(population, database = database)))
+    } else{
+      elements <- 1:sum(database[,4]-database[,3]+1)
+    }
+
   }
   if(depth.pedigree==Inf){
     pedigree.database <- get.database(population, gen=1:max(database[,1]))
   } else{
-    new.pedigree.database <- pedigree.database <- database
+    new.pedigree.database <- new.pedigree.database_prior <- pedigree.database <- database
     remaining.depth <- depth.pedigree
     while(remaining.depth>0){
-      parents <- get.pedigree(population, database = new.pedigree.database, raw=TRUE)
+      parents <- get.pedigree(population, database = new.pedigree.database, raw=TRUE, include.error = include.error)
       m_parents <- rbind(parents[parents[,5]==1,4:6], parents[parents[,8]==1,7:9])
       f_parents <- rbind(parents[parents[,5]==2,4:6], parents[parents[,8]==2,7:9])
       if(nrow(m_parents)>0){
@@ -145,26 +156,52 @@ kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth
 
       new.pedigree.database <- get.database(population, database=rbind(m_data,f_data))
       new.pedigree.database <- unique(new.pedigree.database)
+
+      #dups = new.pedigree.database[,1] * 1000000000 + new.pedigree.database[,2] * 100000000 + new.pedigree.database[,3] * 10000 + new.pedigree.database[,4]
+      #dups2 = pedigree.database[,1]    * 1000000000 + pedigree.database[,2] * 100000000 + pedigree.database[,3] * 10000 + pedigree.database[,4]
+      #already = dups %in% dups2
+      #new.pedigree.database = new.pedigree.database[!already,,drop = FALSE]
+
       remaining.depth <- remaining.depth - 1
       pedigree.database <- rbind(new.pedigree.database, pedigree.database)
+
+      if(length(new.pedigree.database) == 0 || (length(new.pedigree.database) == length(new.pedigree.database_prior) && prod(new.pedigree.database == new.pedigree.database_prior)==1)){
+        break
+      }
+      new.pedigree.database_prior = new.pedigree.database
     }
 
-    pedigree.database <- get.database(population, database = pedigree.database)
+    pedigree.database <- get.database(population, database = unique(pedigree.database))
   }
 
   ids_database <- get.id(population, database = database)
   ids_database_unique <- unique(ids_database)
-  ids_pedigree <- sort(unique(get.id(population, database = pedigree.database)))
 
+  ids_pedigree = get.id(population, database = pedigree.database)
+  if(min(diff(ids_pedigree))<1){
+    ids_pedigree <- sort(unique(ids_pedigree))
+  }
   ids_pedigree_first <- max(get.id(population, database = pedigree.database[pedigree.database[1,1]==pedigree.database[,1],,drop=FALSE]))
 
   n.animals <- length(ids_database_unique)
   n.total <- length(ids_pedigree)
 
-  position.pedigree <- numeric(n.animals)
-  for(index in 1:length(ids_database)){
-    position.pedigree[index] <- which(ids_pedigree==ids_database[index])
+
+
+  if(max(ids_pedigree) < 10^9 ){
+    translate2 = numeric(max(ids_pedigree))
+
+    translate2[ids_pedigree] = 1:length(ids_pedigree)
+
+    position.pedigree = translate2[ids_database]
+  } else{
+    position.pedigree <- numeric(n.animals)
+    for(index in 1:length(ids_database)){
+      position.pedigree[index] <- which(ids_pedigree==ids_database[index])
+    }
   }
+
+
 
   if(verbose) cat("Derive pedigree-matrix based for ", n.animals, " individuals based on ", n.total, " individuals.\n")
   kinship <- matrix(0L, ncol=n.total, nrow=n.total)
@@ -179,7 +216,8 @@ kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth
         stop("Dimension of start kinship matrix does not match with generation size!")
       }
       founder_id <- get.id(population, gen=activ_gen)
-      keeps <- which(duplicated(c(founder_id,ids_pedigree[1:size.firstgen]))) - length(founder_id)
+
+      keeps = which(founder_id %in% ids_pedigree[1:size.firstgen])
 
       temp_kinship <- population$info$kinship[[activ_gen]][keeps, keeps] * int_mult2
       storage.mode(temp_kinship) <- "integer"
@@ -195,23 +233,32 @@ kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth
   first_new <- size.firstgen +1
 
   ## Potential export individual id in the pedigree - more efficient for high number of copies!
-  info.indi <- get.pedigree(population, database=pedigree.database)
-  info.indi_id <- get.pedigree(population, database=pedigree.database, id=TRUE)
+  #info.indi <- get.pedigree(population, database=pedigree.database)
+  info.indi_id <- get.pedigree(population, database=pedigree.database, use.id=TRUE, include.error = include.error)
 
-  info.indi <-  info.indi[!duplicated(info.indi_id[,1]),]
-  info.indi_id <-  info.indi_id[!duplicated(info.indi_id[,1]),]
+  #info.indi <-  info.indi[!duplicated(info.indi_id[,1]),,drop = FALSE]
+  info.indi_id <-  info.indi_id[!duplicated(info.indi_id[,1]),,drop = FALSE]
   info.indi.pos <- matrix(0, ncol=3, nrow=nrow(info.indi_id))
 
+  storage.mode(info.indi_id) = "numeric"
 
-  for(index in 1:length(ids_pedigree)){
-    info.indi.pos[info.indi_id==ids_pedigree[index]] <- index
+  if(max(ids_pedigree) < 10^9 ){
+    translate = numeric(max(ids_pedigree))
+    translate[ids_pedigree] = 1:length(ids_pedigree)
+    info.indi.pos <- matrix(0, ncol=3, nrow=nrow(info.indi_id))
+    info.indi.pos[info.indi_id!=0] = translate[info.indi_id]
+  } else{
+    for(index in 1:length(ids_pedigree)){
+      info.indi.pos[info.indi_id==ids_pedigree[index]] <- index
+    }
   }
+
 
   sorting <- sort(info.indi.pos[,1], index.return=TRUE)$ix
 
-  info.indi <- info.indi[sorting,]
-  info.indi_id <- info.indi_id[sorting,]
-  info.indi.pos <- info.indi.pos[sorting,]
+  #info.indi <- info.indi[sorting,,drop = FALSE]
+  info.indi_id <- info.indi_id[sorting,,drop = FALSE]
+  info.indi.pos <- info.indi.pos[sorting,,drop = FALSE]
 
   nr_indi <- info.indi.pos[,1]
   nr_father <- info.indi.pos[,2]
@@ -241,15 +288,55 @@ kinship.exp <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth
 
 
   if(length(mult)>0){
-    kinship.relevant <- kinship[position.pedigree,position.pedigree] / (int_mult /mult)
+    kinship.relevant <- kinship[position.pedigree,position.pedigree,drop = FALSE] / (int_mult /mult)
   } else{
-    kinship.relevant <- kinship[position.pedigree,position.pedigree] / int_mult
+    kinship.relevant <- kinship[position.pedigree,position.pedigree,drop = FALSE] / int_mult
   }
 
-  kinship.relevant <- kinship.relevant[elements,elements]
+  kinship.relevant <- kinship.relevant[elements,elements,drop = FALSE]
 
   colnames(kinship.relevant) <- rownames(kinship.relevant) <- info.indi_id[position.pedigree[elements],1]
 
+  t2 <- as.numeric(Sys.time())
+
+  if(verbose){paste0(round(t2-t1, digits=2), " seconds for calculation of A matrix\n")}
   return(kinship.relevant)
 
+}
+
+
+#' Derive pedigree relationship matrix
+#'
+#' Function to derive pedigree matrix
+#' @param population Population list
+#' @param database Groups of individuals to consider for the export
+#' @param gen Quick-insert for database (vector of all generations to export)
+#' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param depth.pedigree Depth of the pedigree in generations
+#' @param start.kinship Relationship matrix of the individuals in the first considered generation
+#' @param elements Vector of individuals from the database to include in pedigree matrix
+#' @param storage.save Lower numbers will lead to less memory but slightly higher computing time (default: 1.5, min: 1)
+#' @param verbose Set to FALSE to not display any prints
+#' @examples
+#' data(ex_pop)
+#' pedigree_matrix <- pedigree.matrix(population=ex_pop, gen=2)
+#' @return Pedigree-based kinship matrix for in gen/database/cohort selected individuals
+#' @export
+#'
+
+pedigree.matrix <- function(population, gen=NULL, database=NULL, cohorts=NULL, depth.pedigree=7,
+                        start.kinship=NULL,
+                        elements = NULL,
+                        storage.save=1.05,
+                        verbose=TRUE){
+
+  A <- kinship.exp(population = population, gen=gen, database=database,
+                   cohorts=cohorts, depth.pedigree=depth.pedigree,
+                   start.kinship=start.kinship,
+                   elements=elements,
+                   storage.save=storage.save,
+                   verbose=verbose,
+                   mult=2)
+
+  return(A)
 }

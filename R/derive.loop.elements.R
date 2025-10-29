@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -45,7 +45,7 @@ derive.loop.elements <- function(population, bve.database, bve.class, bve.avoid.
   for(index in 1:nrow(bve.database)){
     if(length(bve.class)>0){
       for(mig in bve.class){
-        max.animals <- max.animals + sum(population$breeding[[bve.database[index,1]]][[bve.database[index,2]+4]][bve.database[3]:bve.database[4]]==mig)
+        max.animals <- max.animals + sum(population$breeding[[bve.database[index,1]]][[bve.database[index,2]+4]][bve.database[index,3]:bve.database[index,4]]==mig)
       }
     } else{
       max.animals <- max.animals + diff(bve.database[index,3:4]) +1

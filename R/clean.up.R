@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -35,10 +35,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 clean.up <- function(population, gen="all", database=NULL, cohorts=NULL){
   #remove.no.snp.segments nur auf die Schnelle und super ineffizient!
   generations <- gen
-  if(gen=="current"){
+  if(length(gen)==1 && gen=="current"){
     generations <- length(population$breeding)
   }
-  if(gen=="all"){
+  if(length(gen)==1 &&  gen=="all"){
     generations <- 1:length(population$breeding)
   }
 

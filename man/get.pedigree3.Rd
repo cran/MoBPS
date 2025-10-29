@@ -9,7 +9,10 @@ get.pedigree3(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  founder.zero = TRUE
+  founder.zero = TRUE,
+  id = FALSE,
+  raw = FALSE,
+  include.error = FALSE
 )
 }
 \arguments{
@@ -22,6 +25,12 @@ get.pedigree3(
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
 \item{founder.zero}{Parents of founders are displayed as "0" (default: TRUE)}
+
+\item{id}{Set to TRUE to extract individual IDs}
+
+\item{raw}{Set to TRUE to not convert numbers into Sex etc.}
+
+\item{include.error}{Set to TRUE to include errors simulated in the pedigree}
 }
 \value{
 Pedigree-file (parents + grandparents) for in gen/database/cohorts selected individuals

@@ -10,9 +10,11 @@ get.vcf(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  chromosomen = "all",
+  id = NULL,
+  chromosome = "all",
   non.genotyped.as.missing = FALSE,
-  use.id = FALSE
+  use.id = FALSE,
+  file.append = FALSE
 )
 }
 \arguments{
@@ -26,11 +28,15 @@ get.vcf(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{chromosomen}{Beschraenkung des Genotypen auf bestimmte Chromosomen (default: 1)}
+\item{id}{Individual IDs to search/collect in the database}
+
+\item{chromosome}{Limit the genotype output to a selected chromosome (default: "all")}
 
 \item{non.genotyped.as.missing}{Set to TRUE to replaced non-genotyped entries with "./."}
 
 \item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names}
+
+\item{file.append}{Set extend an existing vcf-file ((without writting a header))}
 }
 \value{
 VCF-file for in gen/database/cohorts selected individuals
@@ -39,7 +45,6 @@ VCF-file for in gen/database/cohorts selected individuals
 Generate a vcf-file for selected groups and chromosome
 }
 \examples{
-data(ex_pop)
 data(ex_pop)
 \donttest{
 file_path <- tempdir()

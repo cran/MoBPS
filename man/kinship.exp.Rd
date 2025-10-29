@@ -12,9 +12,11 @@ kinship.exp(
   depth.pedigree = 7,
   start.kinship = NULL,
   elements = NULL,
-  mult = 2,
-  storage.save = 1.5,
-  verbose = TRUE
+  mult = 1,
+  storage.save = 1.05,
+  verbose = TRUE,
+  include.error = TRUE,
+  elements.copy = FALSE
 )
 }
 \arguments{
@@ -32,11 +34,15 @@ kinship.exp(
 
 \item{elements}{Vector of individuals from the database to include in pedigree matrix}
 
-\item{mult}{Multiplicator of kinship matrix (default: 2)}
+\item{mult}{Multiplicator of kinship matrix (default: 1; set to 2 for a pedigree relationship matrix)}
 
 \item{storage.save}{Lower numbers will lead to less memory but slightly higher computing time (default: 1.5, min: 1)}
 
 \item{verbose}{Set to FALSE to not display any prints}
+
+\item{include.error}{Set to FALSE to ignore/correct any errors in the pedigree}
+
+\item{elements.copy}{Set to TRUE to automatically remove duplicated entries for individuals/database from the output matrix (default: FALSE)}
 }
 \value{
 Pedigree-based kinship matrix for in gen/database/cohort selected individuals

@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,20 +26,21 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param id Individual IDs to search/collect in the database
 #' @param use.all.copy Set to TRUE to extract phenotyping
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
 #' @examples
 #' data(ex_pop)
 #' get.pheno(ex_pop, gen=2)
 #' @return Phenotypes for in gen/database/cohorts selected individuals
 #' @export
 
-get.npheno <- function(population, database=NULL, gen=NULL, cohorts=NULL, use.all.copy = FALSE, use.id=FALSE){
+get.npheno <- function(population, database=NULL, gen=NULL, cohorts=NULL, id = NULL, use.all.copy = FALSE, use.id=TRUE){
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
   n.animals <- sum(database[,4] - database[,3] +1)
-  data <- matrix(NA, ncol=n.animals, nrow=population$info$bv.nr)
+  data <- matrix(0, ncol=n.animals, nrow=population$info$bv.nr)
   before <- 0
   names <- numeric(n.animals)
 
@@ -58,8 +59,8 @@ get.npheno <- function(population, database=NULL, gen=NULL, cohorts=NULL, use.al
 
           if(sum(population$breeding[[copies[rows,1]]][[copies[rows,2]]][[copies[rows,3]]][[15]]> n_obs)>=1){
             switches <- population$breeding[[copies[rows,1]]][[copies[rows,2]]][[copies[rows,3]]][[15]]> n_obs
-            data[switches, (before+1)] <- population$breeding[[copies[rows,1]]][[copies[rows,2]+8]][switches,copies[rows,3]]
             n_obs[switches] <- population$breeding[[copies[rows,1]]][[copies[rows,2]]][[copies[rows,3]]][[15]][switches]
+            data[switches, (before+1)] <- n_obs[switches]
           }
 
         }

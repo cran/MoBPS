@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,22 +21,36 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #' Derive which markers are genotyped of selected individuals
 #'
-#' Function to devide which markers are genotyped for the selected individuals
+#' Function to derive which markers are genotyped for the selected individuals
 #' @param population Population list
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param id Individual IDs to search/collect in the database
 #' @param export.alleles If TRUE export underlying alleles instead of just 012
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
+#' @param array Use only markers available on the array
 #' @examples
 #' data(ex_pop)
 #' genotyped.snps <- get.genotyped.snp(ex_pop, gen=2)
 #' @return Binary Coded is/isnot genotyped level for in gen/database/cohorts selected individuals
 #' @export
 
-get.genotyped.snp <- function(population, database=NULL, gen=NULL, cohorts=NULL, export.alleles=FALSE, use.id=FALSE){
+get.genotyped.snp <- function(population, database=NULL, gen=NULL, cohorts=NULL, id = NULL,
+                              export.alleles=FALSE, use.id=TRUE,
+                              array = NULL){
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
+
+  if(length(array)>0){
+    temp1 <- which(population$info$array.name == array)
+    if(length(temp1)==1){
+      array <- temp1
+    }
+    if(!is.numeric(array)){
+      stop("Input for array can not be assigned! Check your input!")
+    }
+  }
 
 
   start.chromo <- cumsum(c(1,population$info$snp)[-(length(population$info$snp)+1)])
@@ -88,6 +102,15 @@ get.genotyped.snp <- function(population, database=NULL, gen=NULL, cohorts=NULL,
   }
 
   rownames(data) <- population$info$snp.name[relevant.snps]
+
+
+  is_genotyped <- rep(TRUE, rep(nrow(data)))
+  if(length(array)>0){
+    is_genotyped[!population$info$array.markers[[array]]] <- FALSE
+  }
+  if(sum(!is_genotyped)>0){
+    data[is_genotyped,] <- 0
+  }
 
   if(export.alleles){
     return(list(titel,data))

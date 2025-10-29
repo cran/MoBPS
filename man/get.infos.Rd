@@ -9,7 +9,8 @@ get.infos(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  use.id = FALSE
+  id = NULL,
+  use.id = TRUE
 )
 }
 \arguments{
@@ -21,7 +22,9 @@ get.infos(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
+\item{id}{Individual IDs to search/collect in the database}
+
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)}
 }
 \value{
 Info list [[1]] phenotypes [[2]] genomic values [[3]] Z [[4/5/6]] additive/epistatic/dice marker effects

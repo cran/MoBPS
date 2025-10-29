@@ -9,10 +9,13 @@ get.haplo(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
-  chromosomen = "all",
+  id = NULL,
+  chromosome = "all",
   export.alleles = FALSE,
   non.genotyped.as.missing = FALSE,
-  use.id = FALSE
+  use.id = TRUE,
+  array = NULL,
+  remove.missing = TRUE
 )
 }
 \arguments{
@@ -24,19 +27,25 @@ get.haplo(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{chromosomen}{Beschraenkung der Haplotypen auf bestimmte Chromosomen (default: 1)}
+\item{id}{Individual IDs to search/collect in the database}
+
+\item{chromosome}{Limit the genotype output to a selected chromosome (default: "all")}
 
 \item{export.alleles}{If TRUE export underlying alleles instead of just 012}
 
 \item{non.genotyped.as.missing}{Set to TRUE to replace non-genotyped markers with NA}
 
-\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)}
+
+\item{array}{Use only markers available on the array}
+
+\item{remove.missing}{Remove markers not genotyped in any individual from the export}
 }
 \value{
 Haplotype data for in gen/database/cohorts selected individuals
 }
 \description{
-Function to devide haplotypes of selected individuals
+Function to derive haplotypes of selected individuals
 }
 \examples{
 data(ex_pop)

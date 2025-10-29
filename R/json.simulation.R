@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -32,13 +32,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param verbose Set to FALSE to not display any prints
 #' @param miraculix.cores Number of cores used in miraculix applications (default: 1)
 #' @param skip.population Set to TRUE to not execute breeding actions (only cost/time estimation will be performed)
-#' @param miraculix.chol Set to FALSE to manually deactive the use of miraculix for any cholesky decompostion even though miraculix is actived
+#' @param miraculix.chol Set to FALSE to manually deactive the use of miraculix for any cholesky decompostion even though miraculix is active
 #' @param time.check Set to TRUE to automatically check simulation run-time before executing breeding actions
 #' @param time.max Maximum length of the simulation in seconds when time.check is active
 #' @param export.population Path were to export the population to (at state selected in export.gen/timepoint)
 #' @param export.gen Last generation to simulate before exporting population to file
 #' @param export.timepoint Last timepoint to simulate before exporting population to file
+#' @param export.cor Set TRUE to export correlation matrices
 #' @param fixed.generation.order Vector containing the order of cohorts to generate (Advanced // Testing Parameter!)
+#' @param generation.cores Number of cores used for the generation of new individuals (This will only be active when generating more than 500 individuals)
+#' @param manual.select.check Set to FALSE to not automatically remove cohorts from Manual select with they lead to an invalid breeding scheme
 #' @examples
 #' data(ex_json)
 #' \donttest{population <- json.simulation(total=ex_json)}
@@ -56,7 +59,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                             export.population=FALSE,
                             export.gen=NULL,
                             export.timepoint=NULL,
-                            fixed.generation.order=NULL){
+                            export.cor = FALSE,
+                            fixed.generation.order=NULL,
+                            generation.cores = NULL,
+                            manual.select.check = FALSE){
 
   if(length(log)==0 && length(file)>0){
     log <- paste0(file, ".log")
@@ -74,7 +80,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
     cat("\n")
     cat(paste0("Simulation started: ", Sys.time(), "\n"))
     cat(paste0("MoBPS version used: ", utils::sessionInfo()$otherPkgs$MoBPS$Version, "\n"))
-    cat("Copyright (C) 2017-2020 Torsten Pook\n\n")
+    cat("Copyright (C) 2017-2025 Torsten Pook\n\n")
   }
 
   if(requireNamespace("miraculix", quietly = TRUE)){
@@ -123,6 +129,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
       traitinfo <- total$`Trait Info`
       cullinginfo <- total$Culling
       subpopulations <- total$Subpopulation$subpopulation_list
+      arrays <- total$Genotype_Arrays$genotype_array_list
       litter_size <- total$litter_size
       first_pop <- subpopulations[[1]]$Name
 
@@ -312,7 +319,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
           if(length(traitinfo[[index]]$is_combi)==1){
             trait_matrix[index,15] <- traitinfo[[index]]$is_combi
             if(traitinfo[[index]]$is_combi){
-              combi_weights[[index]] <- unlist(as.numeric(traitinfo[[index]]$combi_weights))
+              combi_weights[[index]] <- as.numeric(unlist(traitinfo[[index]]$combi_weights))
             }
           } else{
             trait_matrix[index,15] <- FALSE
@@ -325,7 +332,12 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
             trait_matrix[index,17] <- traitinfo[[index]]$`dominant_equal`
           }
           if(length(traitinfo[[index]]$`dominant_positive`)==1){
-            trait_matrix[index,18] <- traitinfo[[index]]$`dominant_positive`
+            if(traitinfo[[index]]$`dominant_positive` == FALSE || traitinfo[[index]]$`dominant_positive`==0){
+              trait_matrix[index,18] <- FALSE
+            } else {
+              trait_matrix[index,18] <- TRUE
+            }
+
           } else{
             trait_matrix[index,18]  <- FALSE
           }
@@ -365,6 +377,22 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         nr <- 1
         vector_pheno <- as.numeric(unlist(total$`Phenotypic Correlation`))
         vector_gen <- as.numeric(unlist(total$`Genetic Correlation`))
+
+        if(length(vector_pheno)< (n_traits*(n_traits+1)/2) || length(vector_pheno)< (n_traits*(n_traits+1)/2)){
+          for(index1 in 1:length(total$`Phenotypic Correlation`)){
+            for(index2 in 1:length(total$`Phenotypic Correlation`[[index1]])){
+              if(length(total$`Phenotypic Correlation`[[index1]][[index2]])==0){
+                total$`Phenotypic Correlation`[[index1]][[index2]] = 0
+              }
+              if(length(total$`Genetic Correlation`[[index1]][[index2]])==0){
+                total$`Genetic Correlation`[[index1]][[index2]] = 0
+              }
+            }
+          }
+          vector_pheno <- as.numeric(unlist(total$`Phenotypic Correlation`))
+          vector_gen <- as.numeric(unlist(total$`Genetic Correlation`))
+        }
+
         for(index1 in 1:n_traits){
           for(index2 in 1:index1){
             cor_pheno[index2,index1] <- cor_pheno[index1,index2] <- vector_pheno[nr]
@@ -372,6 +400,9 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
             nr <- nr + 1
           }
         }
+
+        cor_gen[is.na(cor_gen)] <- 0
+        cor_pheno[is.na(cor_pheno)] <- 0
 
         eigen_gen <- eigen(cor_gen)
         if(sum(eigen_gen$values<0)>0){
@@ -395,12 +426,30 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         }
 
         if(length(total$`PhenotypicResidual`)>0 && total$`PhenotypicResidual`){
-          gen_var <- (diag(trait_matrix[,4])) %*% cor_gen %*% (diag(trait_matrix[,4]))
-          pheno_var<-  (diag(pheno_var)) %*% cor_pheno %*% (diag(pheno_var))
+
+          if(length(trait_matrix[,4])==1){
+            gen_var <- (matrix(as.numeric(trait_matrix[,4]))) %*% cor_gen %*% (matrix(as.numeric(trait_matrix[,4])))
+          } else{
+            gen_var <- (diag(as.numeric(trait_matrix[,4]))) %*% cor_gen %*% (diag(as.numeric(trait_matrix[,4])))
+          }
+
+          if(length(pheno_var)==1){
+            pheno_var<-  (matrix(pheno_var)) %*% cor_pheno %*% (matrix(pheno_var))
+          } else{
+            pheno_var<-  (diag(pheno_var)) %*% cor_pheno %*% (diag(pheno_var))
+          }
+
+
+          #pheno_var<-  (diag(pheno_var)) %*% cor_pheno %*% (diag(pheno_var))
           residual_var <- pheno_var - gen_var
-          cor_pheno <- sqrt(diag(diag(1/residual_var))) %*% residual_var %*%  sqrt(diag(diag(1/residual_var)))
+          if(length(residual_var)==1){
+            cor_pheno <- sqrt(matrix(matrix(1/residual_var))) %*% residual_var %*%  sqrt(matrix(matrix(1/residual_var)))
+          } else{
+            cor_pheno <- sqrt(diag(diag(1/residual_var))) %*% residual_var %*%  sqrt(diag(diag(1/residual_var)))
+          }
+
           cor_pheno[is.na(cor_pheno)] = 0
-          if(verbose) cat("Used genetic covariance:\n")
+          if(verbose) cat("Used residual covariance:\n")
           if(verbose) print(cor_pheno)
         }
         eigen_pheno <- eigen(cor_pheno)
@@ -665,6 +714,11 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         if(verbose) cat("Diagonal of cor-matrix must be 1\n")
       }
 
+      if(export.cor){
+
+        return(list(cor_gen, cor_pheno))
+
+      }
 
       # Correct nodes are Founders
       ids <- possible_founder <-  earliest_time <- numeric(length(nodes))
@@ -687,6 +741,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
       for(index in length(edges):1){
         if(sum(edges[[index]]$to==ids)==0 || sum(edges[[index]]$from==ids)==0){
           if(verbose) cat("Remove illegal edge. Connected Node not present\n")
+          print(c(index, edges[[index]]$from, edges[[index]]$to ))
           edges[[index]] <- NULL
         }
       }
@@ -1093,14 +1148,16 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                           filter.values = geninfo$'Ensembl Filter Values')
           }
         } else{
-          stop("Use of Ensembl-Maps without MoBPSmaps R-package.
+          warning("Use of Ensembl-Maps without MoBPSmaps R-package.
+        ## Replace genome with 5 Chromsomes a 1000 SNPs and 1 Morgan
         ## To Install:
         ## devtools::install_github('tpook92/MoBPS', subdir='pkg-maps')
         ## Or download from https://github.com/tpook92/MoBPS")
+          map <- cbind(rep(1:5, each=1000), paste0("SNP", 1:1000),  seq(0.005,0.995, length.out = 1000), round(seq(0.005,0.995, length.out = 1000) * 100000000), NA)
         }
 
 
-        if(length(geninfo$'Max Number of SNPs')>0 && as.numeric(geninfo$'Max Number of SNPs')<nrow(map)){
+        if(length(geninfo$'Max Number of SNPs')>0 && is.numeric(geninfo$'Max Number of SNPs') && as.numeric(geninfo$'Max Number of SNPs')<nrow(map)){
           map <- map[sort(sample(1:nrow(map), as.numeric(geninfo$'Max Number of SNPs'))),]
         }
 
@@ -1201,6 +1258,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
       sex.s <- NULL
       genotyped.s <- NULL
+      genotyped.array <- NULL
       # CHECK FOR ME THAN 2 FOUNDERS (MORE THAN 1 of a sex- Migration level...)
       new_mig <- c(0,0)
 
@@ -1214,6 +1272,8 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         sex.s <- c(sex.s, rep(sex, size))
         genotyped.s <- c(genotyped.s, stats::rbinom(as.numeric(nodes[[founder[index]]]$'Number of Individuals'), 1,
                                                     as.numeric(nodes[[founder[index]]]$`Proportion of genotyped individuals`)))
+
+        genotyped.array <- c(genotyped.array, rep( nodes[[founder[index]]]$'array_used' ,as.numeric(nodes[[founder[index]]]$'Number of Individuals')))
         if(sex==1){
           mig_m <- c(mig_m, rep(new_mig[1], size))
           mig <- new_mig[1]
@@ -1258,6 +1318,24 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         for(index in 1:length(subpopulations)){
           subpopulation_info[index,] <- unlist(subpopulations[[index]])[1:10]
         }
+
+        array_info <- matrix(0, nrow=length(arrays), ncol=2)
+        if(length(arrays)>0){
+          for(index in 1:length(arrays)){
+            array_info[index,] <- unlist(arrays[[index]])[1:2]
+          }
+
+          for(index in 1:length(nodes)){
+            if(length(nodes[[index]]$array_used) == 0){
+              nodes[[index]]$array_used = array_info[1,1]
+            }
+          }
+        } else{
+          for(index in 1:length(nodes)){
+            nodes[[index]]$array_used <- 1
+          }
+        }
+
 
         if( (length(subpopulations)>1 || sum(as.numeric(subpopulation_info[,9])>0) > 0) & miraculix.dataset){
           miraculix.dataset <- FALSE
@@ -1728,7 +1806,36 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                        miraculix = miraculix,
                                        miraculix.dataset = miraculix.dataset,
                                        chr.nr = map[,1], bp=map[,4], snp.name = map[,2],
-                                       freq = map[,5], snp.position = if(is.na(map[1,3])) {NULL} else {map[,3]})
+                                       freq = map[,5], snp.position = if(is.na(map[1,3])) {NULL} else {as.numeric(map[,3])})
+
+        if(nrow(array_info)>1){
+
+          for(index in 2:nrow(array_info)){
+
+            if(sum(population$info$snp) > as.numeric(array_info[index,2])){
+              markers <- rep(FALSE, sum(population$info$snp))
+              markers[sample(sum(population$info$snp), as.numeric(array_info[index,2]))] <- TRUE
+            } else{
+              markers <- rep(TRUE, sum(population$info$snp))
+            }
+
+            population <- add.array(population, marker.included = markers, array.name = array_info[index,1])
+          }
+
+          for(sex in 1:2){
+            if(sum(sex.s==sex)>0){
+              genotyped.array_temp <- genotyped.array[sex.s==sex]
+              for(index in 1:sum(sex.s==sex)){
+                population$breeding[[1]][[sex]][[index]][[22]] <- which(array_info[,1]==genotyped.array_temp[index]) * population$breeding[[1]][[sex]][[index]][[22]]
+                # Multiplication with 0 ensures that non-genotyped individuals remain ungenotyped
+
+              }
+            }
+
+
+          }
+
+        }
 
         if(length(mutation.rate)>0){
           population <- set.default(population, parameter.name ="mutation.rate", parameter.value = mutation.rate)
@@ -1757,11 +1864,16 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
         founder_pop <- founder_pop[founder_temp2]
 
-        population$info$cohorts <- cohort_info
+        population$info$cohorts <- cbind(cohort_info, NA, NA)
 
         colnames(population$info$cohorts) <- c("name","generation", "male individuals", "female individuals", "class", "position first male", "position first female",
-                                               "time point", "creating.type")
+                                               "time point", "creating.type", "lowest ID", "highest ID")
 
+        for(index in 1:nrow(population$info$cohorts)){
+          population$info$cohorts[index,10] = min(get.id(population, cohorts = population$info$cohorts[index,1]))
+          population$info$cohorts[index,11] = max(get.id(population, cohorts = population$info$cohorts[index,1]))
+
+        }
 
         if(n_traits>0){
           population <- creating.trait(population, n.additive = as.numeric(trait_matrix[,6]),
@@ -1785,66 +1897,12 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
           # Correct Scaling
           snp.before <- cumsum(c(0,population$info$snp))
 
+          active_sub <- subpopulation_info[1,1]
 
-          ## REASON?!
-          if(TRUE){
-            for(index in 1:n_traits){
-              if(length(population$info$real.bv.add[[index]])>0){
-                t <- population$info$real.bv.add[[index]]
-                take <- sort(t[,1]+ snp.before[t[,2]], index.return=TRUE)
-                t <- t[take$ix,,drop=FALSE]
-                take <- sort(t[,1]+ t[,2] * 10^10)
-                keep <- c(0,which(diff(take)!=0), length(take))
-                if(length(keep) <= nrow(t)){
-                  for(index2 in 2:(length(keep))){
-                    t[keep[index2],3:5] <- colSums(t[(keep[index2-1]+1):keep[index2],3:5, drop=FALSE])
-                  }
-                  population$info$real.bv.add[[index]] <- t[keep,]
-                }
-              }
-            }
-          }
+          standard_cohort <- population$info$cohorts[which(founder_pop==active_sub),1]
+          population = bv.standardization(population, mean.target = traitmean, var.target = as.numeric(trait_matrix[,4])^2,
+                                          cohorts = standard_cohort)
 
-
-          ## Variance Standardization
-          for(index in 1:n_traits){
-            new_var <- as.numeric(trait_matrix[index,4])^2
-
-            if(population$info$bv.calculated==FALSE){
-              population <- breeding.diploid(population, verbose=verbose)
-            }
-            active_sub <- subpopulation_info[1,1]
-            standard_cohort <- population$info$cohorts[which(founder_pop==active_sub),1]
-            var_test <- stats::var(get.bv(population, cohorts= standard_cohort)[index,])
-            test1 <- TRUE
-            if(length(population$info$real.bv.add[[index]])>0){
-              population$info$real.bv.add[[index]][,3:5] <- population$info$real.bv.add[[index]][,3:5] * sqrt(  new_var / var_test)
-              test1 <- FALSE
-            }
-            if(length(population$info$real.bv.mult[[index]])>0){
-              population$info$real.bv.mult[[index]][,5:13] <- population$info$real.bv.mult[[index]][,5:13] * sqrt(  new_var / var_test)
-              test1 <- FALSE
-            }
-            if(test1 && verbose) cat("You entered a trait without quantitative loci. Is this intentional?\n")
-
-          }
-          population$info$bv.calculated <- FALSE
-
-          ## Mean Standardization
-          for(index in 1:n_traits){
-
-            if(population$info$bv.calculated==FALSE){
-              population <- breeding.diploid(population, verbose=verbose)
-            }
-            active_sub <- subpopulation_info[1,1]
-            standard_cohort <- population$info$cohorts[which(founder_pop==active_sub),1]
-            mean_test <- mean(get.bv(population, cohorts= standard_cohort)[index,])
-
-
-            population$info$base.bv[index] <- traitmean[index] + population$info$base.bv[index] - mean_test
-
-          }
-          population$info$bv.calculated <- FALSE
 
           ## Add Major QTL
           for(index in 1:n_traits){
@@ -1853,8 +1911,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
             } else{
               to_enter <- rbind(NULL)
             }
-            if(length(to_enter)>0 || length(population$info$real.bv.add[[index]])>0){
-              population$info$real.bv.add[[index]] <- rbind(to_enter, population$info$real.bv.add[[index]])
+            if(length(to_enter)>0 && length(population$info$real.bv.add[[index]])>0){
+
+
+              population$info$real.bv.add[[index]] <- rbind(cbind(to_enter, c(0,population$info$cumsnp)[to_enter[,2]] + to_enter[,1], 0, 0), population$info$real.bv.add[[index]])
 
               if(population$info$real.bv.length[1]<index && length(to_enter)>0){
                 population$info$real.bv.length[1] <- index
@@ -1918,6 +1978,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                       population$info$bv.calculated <- FALSE
                       if(subpop==1){
                         population <- breeding.diploid(population, verbose=verbose)
+
                         population$info$bv.calculated <- FALSE
                       }
                     }
@@ -1941,6 +2002,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         population$breeding[[1]][[5]] <- mig_m
         population$breeding[[1]][[6]] <- mig_f
 
+      }
+
+      if(population$info$bv.calculated==FALSE){
+        population <- breeding.diploid(population, verbose=verbose)
       }
 
     }
@@ -1974,6 +2039,17 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
               nodes[[to_node]]$require <- c(nodes[[to_node]]$require, temp2)
             }
           }
+          if(length(edges[[index]]$'reliability')>0 && edges[[index]]$'reliability'=="Yes"){
+            nodes[[to_node]]$'reliability' <- TRUE
+          } else if(length( nodes[[to_node]]$'reliability')==0){
+            nodes[[to_node]]$'reliability' <- FALSE
+          }
+          if(length(edges[[index]]$'est_reliability')>0 && edges[[index]]$'est_reliability'=="Yes"){
+            nodes[[to_node]]$'est_reliability' <- TRUE
+          } else if(length( nodes[[to_node]]$'est_reliability')==0){
+            nodes[[to_node]]$'est_reliability' <- FALSE
+          }
+
           nodes[[to_node]]$'Relationship Matrix' <- edges[[index]]$'Relationship Matrix'
           nodes[[to_node]]$skip <- edges[[index]]$skip
           nodes[[to_node]]$'BVE Method' <- edges[[index]]$'BVE Method'
@@ -2107,10 +2183,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                 if(constrains[[index]]=="ub.sKin.increase"){
                   nodes[[to_node]]$constrain[[7]] <- as.numeric(constrains_value[[index]])
                 }
-                if(length( nodes[[to_node]]$constrain)>0){
-                  nodes[[to_node]]$constrain[[8]] <- "placeholder"
-                }
               }
+
+              nodes[[to_node]]$constrain[[8]] <- "placeholder"
+
             }
 
           } else if(length(nodes[[to_node]]$OGC)==0){
@@ -2227,11 +2303,16 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
         real_genotyped <- 0
         n_animals <- 0
         for(index2 in nodes[[index]]$origin){
-          real_genotyped <- real_genotyped + as.numeric(nodes[[which(index2==ids)]]$`Proportion of genotyped individuals`) * as.numeric(nodes[[which(index2==ids)]]$`Number of Individuals`)
+          real_genotyped <- real_genotyped + as.numeric(nodes[[which(index2==ids)]]$`Proportion of genotyped individuals`) * as.numeric(nodes[[which(index2==ids)]]$`Number of Individuals`) * (nodes[[index]]$array_used == nodes[[which(index2==ids)]]$array_used)
           n_animals <- n_animals + nodes[[which(index2==ids)]]$`Number of Individuals`
         }
         if(n_animals>0){
           nodes[[index]]$'Proportion of added genotypes' <- max(0, exp_genotyped - real_genotyped/n_animals)
+
+          test1 <- nodes[[index]]$`Breeding Type`
+          if((exp_genotyped- real_genotyped/n_animals)<0 && !(test1=="Reproduction" || test1 =="Selfing" || test1 == "DH-Production" || test1 =="Cloning")){
+            warning(paste0("Share of genotyping has reduce to node ", nodes[[index]]$id, ". Calculation of share genotyped will depend only on the previous node and not prior history of animals!"))
+          }
         } else{
           nodes[[index]]$'Proportion of added genotypes' <- exp_genotyped
         }
@@ -2385,29 +2466,89 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
 
 
-          for(index in (1:length(edges))[!last_avail]){
-            there <- which(edges[[index]]$to==possible)
-            if(length(there)>0){
+          if(manual.select.check){
+            for(index in (1:length(edges))[!last_avail]){
+              there <- which(edges[[index]]$to==possible)
+              if(length(there)>0){
 
 
-              if(sum(edges[[index]]$from==stock)==0){
+                if(sum(edges[[index]]$from==stock)==0){
 
-                possible <- possible[-there]
-
-                next
-              }
-
-              to_node <- which(ids==edges[[index]]$to)
-
-              if(length(nodes[[to_node]]$'Manuel selected cohorts')>0){
-                manu <- setdiff(nodes[[to_node]]$'Manuel selected cohorts', edges[[index]]$from)
-                if(length(intersect(manu, stock))<length(manu)){
                   possible <- possible[-there]
+
+                  next
+                }
+
+                to_node <- which(ids==edges[[index]]$to)
+
+                if(length(nodes[[to_node]]$'Manuel selected cohorts')>0){
+                  manu <- setdiff(nodes[[to_node]]$'Manuel selected cohorts', edges[[index]]$from)
+                  if(length(intersect(manu, stock))<length(manu)){
+                    possible <- possible[-there]
+                  }
+                }
+
+              }
+            }
+          } else{
+
+            possible_temp = possible
+            for(index in (1:length(edges))[!last_avail]){
+              there <- which(edges[[index]]$to==possible)
+              if(length(there)>0){
+
+
+                if(sum(edges[[index]]$from==stock)==0){
+
+                  possible <- possible[-there]
+
+                  next
+                }
+
+                to_node <- which(ids==edges[[index]]$to)
+
+                if(length(nodes[[to_node]]$'Manuel selected cohorts')>0){
+                  manu <- setdiff(nodes[[to_node]]$'Manuel selected cohorts', edges[[index]]$from)
+                  if(length(intersect(manu, stock))<length(manu)){
+                    possible <- possible[-there]
+                  }
+                }
+
+              }
+            }
+
+            if(length(possible)== 0){
+              possible = possible_temp
+
+              for(index in (1:length(edges))[!last_avail]){
+                there <- which(edges[[index]]$to==possible)
+                if(length(there)>0){
+
+
+                  if(sum(edges[[index]]$from==stock)==0){
+
+                    possible <- possible[-there]
+
+                    next
+                  }
+
+                  to_node <- which(ids==edges[[index]]$to)
+
+                  if(length(nodes[[to_node]]$'Manuel selected cohorts')>0){
+                    manu <- setdiff(nodes[[to_node]]$'Manuel selected cohorts', edges[[index]]$from)
+                    if(length(intersect(manu, stock))<length(manu)){
+                      nodes[[to_node]]$'Manuel selected cohorts' = intersect(manu, stock)
+                      if(verbose){
+                        cat(paste0("Removed ", length(manu) - length(intersect(manu, stock)), " cohorts from BVE for ", edges[[index]]$from, " to ", edges[[index]]$to, ".\n"))
+                      }
+                    }
+                  }
+
                 }
               }
-
             }
           }
+
 
           if(length(intersect(possible, priority_breeding))>0){
             possible <- intersect(possible, priority_breeding)
@@ -2425,7 +2566,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
           # Remove group for which not all testers are generated
 
           if(length(possible)==0){
-            stop("invalite breeding program")
+            stop("invalide breeding program")
           }
 
 
@@ -2902,6 +3043,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
       rm(dataset)
       rm(map)
     }
+
+    if(length(generation.cores)>0){
+      population <- breeding.diploid(population, generation.cores = generation.cores)
+    }
     ############## Actual simulations ########################
     {
 
@@ -2931,21 +3076,24 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                         verbose = FALSE)
           pop_check <- breeding.diploid(pop_check, breeding.size = 1000, verbose =FALSE)
           pop_check <- breeding.diploid(pop_check, bve=TRUE, new.bv.observation = "all", verbose = FALSE)
-          pop_check <- breeding.diploid(pop_check, breeding.size = 1000, copy.individual = TRUE, verbose = FALSE)
+          pop_check <- breeding.diploid(pop_check, breeding.size = 1000, copy.individual.m = TRUE, verbose = FALSE,
+                                        selection.m.gen = 2)
 
-          time_bve1000 <- pop_check$info$comp.times.bve[2,10]
-          time_gen1000 <- pop_check$info$comp.times.generation[1,4]
-          time_copy1000 <- pop_check$info$comp.times.generation[3,4]
+          time_bve1000 <- pop_check$info$comp.times.bve[3,10]
+          time_gen1000 <- pop_check$info$comp.times.generation[2,6]
+          time_copy1000 <- pop_check$info$comp.times.generation[4,6]
         } else{
           pop_check <- creating.diploid(nindi = 2, nsnp = 100, chromosome.length = chromo.length,
                                         verbose = FALSE)
           pop_check <- breeding.diploid(pop_check, breeding.size = 1000, verbose =FALSE)
           pop_check <- breeding.diploid(pop_check)
-          pop_check <- breeding.diploid(pop_check, breeding.size = 1000, copy.individual = TRUE, verbose = FALSE)
+          pop_check <- breeding.diploid(pop_check, breeding.size = 1000,
+                                        copy.individual.m = TRUE, verbose = FALSE,
+                                        selection.m.gen = 2)
 
           time_bve1000 <- 0.25 #pop_check$info$comp.times.bve[2,10]
-          time_gen1000 <- pop_check$info$comp.times.generation[1,4]
-          time_copy1000 <- pop_check$info$comp.times.generation[3,4]
+          time_gen1000 <- pop_check$info$comp.times.generation[2,6]
+          time_copy1000 <- pop_check$info$comp.times.generation[4,6]
         }
 
 
@@ -3071,6 +3219,10 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                   next
                 }
 
+                array_used <- nodes[[groupnr]]$array_used
+                if(array_used =="Full Array"){
+                  array_used <- "Full_Array"
+                }
                 involved_cohorts <- nodes[[groupnr]]$origin
                 cohort_data <- population$info$cohorts[involved_cohorts,,drop=FALSE]
                 sex_cohorts <- (as.numeric(cohort_data[,3])==0) +1
@@ -3153,6 +3305,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
 
 
                 bve.breeding.type <- nodes[[groupnr]]$`Breeding Type`=="Selection" || nodes[[groupnr]]$`Breeding Type`=="Aging" || nodes[[groupnr]]$`Breeding Type`=="Split"
+
                 if(length(nodes[[groupnr]]$'Cohorts used in BVE') || bve.breeding.type){
                   if(length(nodes[[groupnr]]$'Cohorts used in BVE')==0 || nodes[[groupnr]]$'Cohorts used in BVE'=="Only this cohort" || nodes[[groupnr]]$`Selection Type`=="Pseudo-BVE"){
                     bve.database <- involved_groups[,1:2, drop=FALSE]
@@ -3227,7 +3380,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                   parent_average <- FALSE
                   grandparent_average <- FALSE
                   mean_between <- NULL
-                  phenotype.bv <- FALSE
+                  selection.criteria <- NULL
                   pseudo_bve <- FALSE
                   computeA <- "vanRaden"
                   input_phenotype <- "own"
@@ -3290,7 +3443,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                   } else if(nodes[[groupnr]]$'Selection Type'=="Phenotypic"){
                     bve <- FALSE
                     selection <- "function"
-                    phenotype.bv <- TRUE
+                    selection.criteria <- c("pheno")
                   } else if(nodes[[groupnr]]$'Selection Type' == "Pseudo-BVE"){
                     bve <- pseudo_bve <- TRUE
                     pseudo_acc <- nodes[[groupnr]]$'PseudoAcc'
@@ -3385,12 +3538,19 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                   } else{
                     offspring.bve.parents.database <- NULL
                   }
+
+                  calc_reli <- nodes[[groupnr]]$'reliability'
+                  est_reli <- nodes[[groupnr]]$'est_reliability'
+
+
                   population <- breeding.diploid(population, breeding.size=breeding.size,
                                                  bve=(bve&bve_exe),
                                                  bve.solve = bve_solve,
                                                  computation.A = computeA,
-                                                 bve.pseudo = pseudo_bve,
-                                                 bve.pseudo.accuracy = pseudo_acc,
+                                                 pseudo.bve = pseudo_bve,
+                                                 calculate.reliability = calc_reli,
+                                                 estimate.reliability = est_reli,
+                                                 pseudo.bve.accuracy = pseudo_acc,
                                                  offspring.bve.parents.database=offspring.bve.parents.database,
                                                  BGLR.bve = activbglr,
                                                  BGLR.model = bglrmodel,
@@ -3403,13 +3563,14 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  selection.size= breeding.size,
                                                  copy.individual = TRUE,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  max.offspring = c(1,1),
                                                  heritability = heritability,
                                                  sigma.e.database = cbind(1,(1:2)[population$info$size[1,]>0]),
                                                  new.bv.child="addobs",
                                                  selection.m = selection,
                                                  selection.f = selection,
-                                                 phenotype.bv = phenotype.bv,
+                                                 selection.criteria =  selection.criteria,
                                                  add.gen = generation,
                                                  bve.database = bve.database,
                                                  selfing.mating=TRUE,
@@ -3486,6 +3647,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  display.progress=progress.bars,
                                                  share.genotyped = share.genotyped,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  ogc = nodes[[groupnr]]$OGC,
                                                  ogc.target = nodes[[groupnr]]$ogc_target,
                                                  relationship.matrix.ogc = nodes[[groupnr]]$ogc_relation,
@@ -3536,6 +3698,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  display.progress=progress.bars,
                                                  share.genotyped = share.genotyped,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  repeat.mating = repeat.mating* nodes[[groupnr]]$repeat_mating,
                                                  repeat.mating.overwrite = FALSE,
                                                  max.offspring = nodes[[groupnr]]$max_offspring,
@@ -3568,6 +3731,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  display.progress=progress.bars,
                                                  share.genotyped = share.genotyped,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  repeat.mating = repeat.mating * nodes[[groupnr]]$repeat_mating,
                                                  repeat.mating.overwrite = FALSE,
                                                  max.offspring = nodes[[groupnr]]$max_offspring,
@@ -3598,6 +3762,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  display.progress=progress.bars,
                                                  share.genotyped = share.genotyped,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  repeat.mating = repeat.mating * nodes[[groupnr]]$repeat_mating,
                                                  repeat.mating.overwrite = FALSE,
                                                  max.offspring = nodes[[groupnr]]$max_offspring,
@@ -3618,6 +3783,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  selection.size= selection.size,
                                                  copy.individual = TRUE,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  selfing.mating = TRUE,
                                                  selfing.sex =  selfing.sex,
                                                  heritability = heritability,
@@ -3655,6 +3821,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
                                                  selection.size= breeding.size,
                                                  copy.individual = TRUE,
                                                  added.genotyped = nodes[[groupnr]]$`Proportion of added genotypes`,
+                                                 genotyped.array = array_used,
                                                  max.offspring = c(1,1),
                                                  new.bv.child="addobs",
                                                  selection.m = "random",
@@ -3756,7 +3923,7 @@ json.simulation <- function(file=NULL, log=NULL, total=NULL, fast.mode=FALSE,
               active_single <- active_single & (death_counter != (-1))
               if(sum(active_single)>0){
                 population <- breeding.diploid(population,
-                                               culling.cohort = cohort_index,
+                                               culling.cohorts = cohort_index,
                                                culling.time = as.numeric(culling_reason[culling_index,2]),
                                                culling.name = culling_reason[culling_index,1],
                                                culling.bv1 = as.numeric(culling_reason[culling_index,6]),

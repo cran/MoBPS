@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -21,29 +21,45 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #' Derive haplotypes of selected individuals
 #'
-#' Function to devide haplotypes of selected individuals
+#' Function to derive haplotypes of selected individuals
 #' @param population Population list
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
-#' @param chromosomen Beschraenkung der Haplotypen auf bestimmte Chromosomen (default: 1)
+#' @param id Individual IDs to search/collect in the database
+#' @param chromosome Limit the genotype output to a selected chromosome (default: "all")
 #' @param export.alleles If TRUE export underlying alleles instead of just 012
 #' @param non.genotyped.as.missing Set to TRUE to replace non-genotyped markers with NA
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
+#' @param array Use only markers available on the array
+#' @param remove.missing Remove markers not genotyped in any individual from the export
 #' @examples
 #' data(ex_pop)
 #' haplo <- get.haplo(ex_pop, gen=2)
 #' @return Haplotype data for in gen/database/cohorts selected individuals
 #' @export
 
-get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromosomen="all", export.alleles=FALSE,
-                     non.genotyped.as.missing=FALSE, use.id=FALSE){
+get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, id = NULL, chromosome="all", export.alleles=FALSE,
+                     non.genotyped.as.missing=FALSE, use.id=TRUE, array = NULL, remove.missing = TRUE){
 
-  if(length(chromosomen)==1 && chromosomen=="all"){
-    subsetting <- FALSE
-    chromosomen <- 1:length(population$info$snp)
+  if(length(chromosome)==1 && chromosome=="all"){
+    chromosome <- 1:length(population$info$snp)
+  }
+
+  if(length(chromosome)==length(population$info$snp) && prod((1:length(population$info$snp))==chromosome)==1){
+    subsetting = FALSE
   } else{
-    subsetting <- TRUE
+    subsetting = TRUE
+  }
+
+  if(length(array)>0){
+    temp1 <- which(population$info$array.name == array)
+    if(length(temp1)==1){
+      array <- temp1
+    }
+    if(!is.numeric(array)){
+      stop("Input for array can not be assigned! Check your input!")
+    }
   }
 
   if(population$info$miraculix){
@@ -69,13 +85,13 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
 
   }
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
   start.chromo <- cumsum(c(1,population$info$snp)[-(length(population$info$snp)+1)])
   end.chromo <- population$info$cumsnp
 
   relevant.snps <- NULL
-  for(index in chromosomen){
+  for(index in chromosome){
     relevant.snps <- c(relevant.snps, start.chromo[index]:end.chromo[index])
   }
   nsnp <- length(relevant.snps)
@@ -111,7 +127,7 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
           } else if(population$info$miraculix){
             data[, before + c(rindex,rindex+1)] <- miraculix::computeSNPS(population,animals[1], animals[2] , index, what="haplo")[relevant.snps,]
           } else{
-            data[, before + c(rindex,rindex+1)] <- t(compute.snps(population,animals[1], animals[2],index, decodeOriginsU=decodeOriginsU)[,relevant.snps])
+            data[, before + c(rindex,rindex+1)] <- t(computing.snps(population,animals[1], animals[2],index, decodeOriginsU=decodeOriginsU)[,relevant.snps])
           }
           rindex <- rindex + 2
         }
@@ -121,22 +137,45 @@ get.haplo<- function(population, database=NULL, gen=NULL, cohorts= NULL, chromos
   }
 
 
+  rownames(data) <- population$info$snp.name[relevant.snps]
+
   if(non.genotyped.as.missing){
     is_genotyped <- get.genotyped.snp(population, database = database)[relevant.snps,]
     if(sum(!is_genotyped)>0){
       data[,(1:(ncol(data)/2))*2-1][!is_genotyped] <- NA
       data[,(1:(ncol(data)/2))*2][!is_genotyped] <- NA
     }
+  } else{
+    is_genotyped <- matrix(TRUE, nrow=nrow(data), ncol=ncol(data))
   }
 
+  if(length(array)>0){
+
+    if(subsetting){
+      is_genotyped[!(population$info$array.markers[[array]][relevant.snps]), ] <- FALSE
+    } else{
+      is_genotyped[!population$info$array.markers[[array]], ] <- FALSE
+    }
+
+
+  }
+  if(sum(!is_genotyped)>0){
+    data[!is_genotyped] <- NA
+  }
+  if(remove.missing){
+    data <- data[rowMeans(is.na(data))<1,,drop = FALSE]
+  }
 
   if(use.id){
-    colnames(data) <- get.id(population, database = database)
+
+    id_names <- get.id(population, database = database)
+    id_names <- paste0(rep(id_names, each=2), c("_set1", "_set2"))
+    colnames(data) <- id_names
   } else{
     colnames(data) <- names
   }
 
-  rownames(data) <- population$info$snp.name[relevant.snps]
+
   if(export.alleles){
     return(list(titel,data))
   } else{

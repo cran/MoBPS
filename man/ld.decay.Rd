@@ -7,7 +7,7 @@
 ld.decay(
   population,
   genotype.dataset = NULL,
-  chromosomen = 1,
+  chromosome = 1,
   dist = NULL,
   step = 5,
   max = 500,
@@ -16,7 +16,9 @@ ld.decay(
   gen = NULL,
   cohorts = NULL,
   type = "snp",
-  plot = FALSE
+  plot = FALSE,
+  xlim = NULL,
+  ylim = NULL
 )
 }
 \arguments{
@@ -24,9 +26,9 @@ ld.decay(
 
 \item{genotype.dataset}{Genotype dataset (default: NULL - just to save computation time when get.geno was already run)}
 
-\item{chromosomen}{Only consider a specific chromosome in calculations (default: 1)}
+\item{chromosome}{Only consider a specific chromosome in calculations (default: 1)}
 
-\item{dist}{Manuel input of marker distances to analyse}
+\item{dist}{Manuel input of marker distances to analyze}
 
 \item{step}{Stepsize to calculate LD}
 
@@ -43,6 +45,10 @@ ld.decay(
 \item{type}{Compute LD decay according to following distance measure between markers (default: "snp", alt: "bp", "cM")}
 
 \item{plot}{Set to FALSE to not generate an LD plot}
+
+\item{xlim}{Axis limits for the x-axis in the LD plot}
+
+\item{ylim}{Axis limits for the y-axis in the LD plot}
 }
 \value{
 LD-decay plot for in gen/database/cohorts selected individuals

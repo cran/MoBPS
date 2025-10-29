@@ -10,7 +10,9 @@ get.pedigree2(
   gen = NULL,
   cohorts = NULL,
   shares = FALSE,
-  founder.zero = TRUE
+  founder.zero = TRUE,
+  raw = FALSE,
+  include.error = FALSE
 )
 }
 \arguments{
@@ -25,6 +27,10 @@ get.pedigree2(
 \item{shares}{Determine actual inherited shares of grandparents}
 
 \item{founder.zero}{Parents of founders are displayed as "0" (default: TRUE)}
+
+\item{raw}{Set to TRUE to not convert numbers into Sex etc.}
+
+\item{include.error}{Set to TRUE to include errors simulated in the pedigree}
 }
 \value{
 Pedigree-file (grandparents) for in gen/database/cohorts selected individuals
@@ -34,5 +40,5 @@ Derive pedigree for selected individuals including grandparents
 }
 \examples{
 data(ex_pop)
-get.pedigree2(ex_pop, gen=2)
+get.pedigree2(ex_pop, gen=3)
 }

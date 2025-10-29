@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,7 +19,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Function to exclude individuals from a database
+#' Exclude individuals from a database
 #'
 #' Function to exclude individuals from a database
 #' @param population Population list
@@ -39,9 +39,16 @@ group.diff <- function(population, database=NULL, gen=NULL, cohorts=NULL, remove
 
 
   all_id <- get.id(population, gen=gen, database=database, cohorts=cohorts)
-  remove_id <- unique(sort(get.id(population, gen=remove.gen, database=remove.database, cohorts=remove.cohorts)))
 
   old_database <- get.database(population, gen, database, cohorts)
+
+  if(length(remove.gen)==0 && length(remove.database)==0 && length(remove.cohorts)==0){
+    return(old_database)
+  }
+
+  remove_id <- unique(sort(get.id(population, gen=remove.gen, database=remove.database, cohorts=remove.cohorts)))
+
+
   new_database <- matrix(0, ncol=4, nrow=length(all_id))
 
   nr1 <- 1
@@ -56,7 +63,13 @@ group.diff <- function(population, database=NULL, gen=NULL, cohorts=NULL, remove
       nr1 <- nr1 +1
     }
   }
-  new_database <- new_database[1:(nr2-1),]
+
+  if(nr2==1){
+    new_database = matrix(nrow = 0, ncol = 4)
+  } else{
+    new_database <- new_database[1:(nr2-1),]
+  }
+
 
   new_database <- get.database(population, database = new_database)
 

@@ -1,9 +1,9 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 Azadeh Hassanpour, azadeh.hassanpour@uni-goettingen.de
 
-Copyright (C) 2017 -- 2021  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,6 +28,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider
 #' @param gen Quick-insert for database (vector of all generations to consider)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to consider)
+#' @param id Individual IDs to search/collect in the database
 #' @param traits Traits to include in the dendrogram (default: all traits)
 #' @param type Which traits values to consider (default: "pheno", alt: "bv", "bve")
 #' @examples
@@ -43,13 +44,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 
-get.dendrogram.trait <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, traits = NULL, type="pheno"){
+get.dendrogram.trait <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, id = NULL, traits = NULL, type="pheno"){
 
   if(length(traits)==0){
     traits <- 1:population$info$bv.nr
   }
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
   if(type=="pheno"){
     y <- t(get.pheno(population, database = database))

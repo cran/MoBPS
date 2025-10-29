@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -26,16 +26,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)
+#' @param id Individual IDs to search/collect in the database
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
 #' @examples
 #' data(ex_pop)
 #' get.bv(ex_pop, gen=2)
 #' @return Genomic value of in gen/database/cohorts selected individuals
 #' @export
 
-get.bv<- function(population, database=NULL, gen=NULL, cohorts=NULL, use.id=FALSE){
+get.bv <- get.gv <- function(population, database=NULL, gen=NULL, cohorts=NULL, id = NULL, use.id=TRUE){
 
-  database <- get.database(population, gen, database, cohorts)
+  database <- get.database(population, gen, database, cohorts, id = id)
 
   n.animals <- sum(database[,4] - database[,3] +1)
   data <- matrix(0, ncol=n.animals, nrow=population$info$bv.nr)
@@ -50,8 +51,8 @@ get.bv<- function(population, database=NULL, gen=NULL, cohorts=NULL, use.id=FALS
       before <- before + nanimals
     }
   }
-  row_names <- paste("Trait", 1:population$info$bv.nr)
-  rownames(data) <- row_names
+
+  rownames(data) <- population$info$trait.name
 
   if(use.id){
     colnames(data) <- get.id(population, database = database)

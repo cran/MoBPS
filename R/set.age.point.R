@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,38 +19,41 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Export location of individuals from the population list
+#' Set age points
 #'
-#' Export location of individuals from the population list
+#' Function to overwrite age.points of individuals
 #' @param population Population list
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param time.point Input value for the age point (time of birth) of an individual (default: 0)
 #' @examples
 #' data(ex_pop)
-#' get.individual.loc(ex_pop, gen=2)
-#' @return Storage Position for in gen/database/cohorts selected individuals (Generation/Sex/IndividualNr)
+#' population <- set.age.point(ex_pop, database=cbind(1,1), time.point = 2)
+#' @return Population-List with newly entered class values
 #' @export
 
-get.individual.loc <- function(population, database=NULL, gen=NULL, cohorts=NULL){
+set.age.point <- function(population, database=NULL, gen=NULL, cohorts=NULL, time.point=0){
 
   database <- get.database(population, gen, database, cohorts)
+  if(length(database)>0){
+    if(length(time.point)==1){
+      for(index in 1:nrow(database)){
+        population$breeding[[database[index,1]]][[database[index,2]+22]][database[index,3]:database[index,4]] <- time.point
+      }
+    } else{
+      next1 = 1
+      for(index in 1:nrow(database)){
+        n_indi = database[index,4] - database[index,3] + 1
+        population$breeding[[database[index,1]]][[database[index,2]+22]][database[index,3]:database[index,4]] <- time.point[next1:(next1 + n_indi - 1)]
+        next1 = next1 + n_indi
+      }
 
-  n.animals <- sum(database[,4] - database[,3] +1)
-  data <- matrix(0, nrow=n.animals, ncol=3)
-  before <- 0
-  rown <- numeric(n.animals)
-  for(row in 1:nrow(database)){
-    animals <- database[row,]
-    nanimals <- database[row,4] - database[row,3] +1
-    data[(before+1):(before+nanimals),] <- cbind(database[row,1], database[row,2], database[row,3]:database[row,4])
-    rown[(before+1):(before+nanimals)] <- paste(if(database[row,2]==1) "M" else "F", database[row,3]:database[row,4], "_", database[row,1], sep="")
-    before <- before + nanimals
+    }
 
   }
-  colnames(data) <- c("generation", "sex", "individual nr.")
-  row.names(data) <- rown
 
-  return(data)
+  return(population)
 
 }
+

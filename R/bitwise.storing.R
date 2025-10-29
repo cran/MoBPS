@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -40,7 +40,7 @@ bit.storing <- function(snpseq, nbits){
 #' Decoding of bitwise-storing in R
 #'
 #' Function for decoding in bitwise-storing in R (only 30 of 32 bits are used!)
-#' @param bit.seq bitweise gespeicherte SNP-Sequenz
+#' @param bit.seq bitwise stored SNP sequence
 #' @param nbits Number of usable bits (default: 30)
 #' @param population Population list
 #' @param from.p.bit Bit to start on

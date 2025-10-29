@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -19,9 +19,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 '#
 
-#' Export estimated breeding values
+#' Set class
 #'
-#' Function to export estimated breeding values
+#' Function to overwrite class values for individuals
 #' @param population Population list
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
@@ -36,9 +36,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 set.class <- function(population, database=NULL, gen=NULL, cohorts=NULL, new.class=0){
 
   database <- get.database(population, gen, database, cohorts)
-  for(index in 1:nrow(database)){
-    population$breeding[[database[index,1]]][[database[index,2]+4]][database[index,3]:database[index,4]] <- new.class
+  if(length(database)>0){
+    for(index in 1:nrow(database)){
+      population$breeding[[database[index,1]]][[database[index,2]+4]][database[index,3]:database[index,4]] <- new.class
+    }
   }
+
   return(population)
 
 }

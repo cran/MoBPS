@@ -7,10 +7,13 @@
 new.base.generation(
   population,
   base.gen = NULL,
+  base.database = NULL,
+  base.cohorts = NULL,
   delete.previous.gen = FALSE,
   delete.breeding.totals = FALSE,
   delete.bve.data = FALSE,
-  add.chromosome.ends = TRUE
+  add.chromosome.ends = TRUE,
+  founder.pool = 1
 )
 }
 \arguments{
@@ -18,13 +21,19 @@ new.base.generation(
 
 \item{base.gen}{Vector containing all new base generations}
 
+\item{base.database}{Matrix containing all database entries to be used as new base generation}
+
+\item{base.cohorts}{Vector containing all cohorts to be used as new base generations}
+
 \item{delete.previous.gen}{Delete all data before base.gen (default: FALSE)}
 
 \item{delete.breeding.totals}{Delete all breeding totals before base.gen (default: FALSE)}
 
-\item{delete.bve.data}{Deleta all previous bve data (default: FALSE)}
+\item{delete.bve.data}{Delete all previous bve data (default: FALSE)}
 
 \item{add.chromosome.ends}{Add chromosome ends as recombination points}
+
+\item{founder.pool}{AAA}
 }
 \value{
 Population-List with mutated marker for the selected individual

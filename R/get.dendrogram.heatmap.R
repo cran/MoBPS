@@ -1,9 +1,9 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 Azadeh Hassanpour, azadeh.hassanpour@uni-goettingen.de
 
-Copyright (C) 2017 -- 2021  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -22,30 +22,31 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #' Dendrogram Heatmap
 #'
-#' Function calculate a dendogram
+#' Function calculate a dendrogram heat
 #' @param population Population list
 #' @param path provide a path if the dendrogram would be saved as a png-file
 #' @param database Groups of individuals to consider
 #' @param gen Quick-insert for database (vector of all generations to consider)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to consider)
+#' @param id Individual IDs to search/collect in the database
 #' @param method Method used to calculate genetic distances (default: "Nei", alt: "Rogers", "Prevosti", "Modified Rogers"
 #' @param individual.names Names of the individuals in the database ((default are MoBPS internal names based on position))
 #' @param traits Traits to include in the dendrogram (default: all traits)
 #' @param type Which traits values to consider (default: "pheno", alt: "bv", "bve")
 #' @examples
 #' population <- creating.diploid(nsnp=1000, nindi=40, n.additive = c(100,100,100),
-#'                shuffle.cor = matrix(c(1,0.8,0.2,0.8,1,0.2,0.2,0.2,1), ncol=3), shuffle.traits = 1:3)
+#'                trait.cor = matrix(c(1,0.8,0.2,0.8,1,0.2,0.2,0.2,1), ncol=3), shuffle.traits = 1:3)
 #' population <- breeding.diploid(population, phenotyping = "all", heritability = 0.5)
 #' get.dendrogram.heatmap(population, gen=1, type="pheno")
 #' @return Dendrogram plot of genotypes vs phenotypes
 #' @export
 
 
-get.dendrogram.heatmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL,
+get.dendrogram.heatmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, id = NULL,
                                    method = NULL, individual.names = NULL, traits = NULL, type="pheno"){
 
   if (requireNamespace("NAM", quietly = TRUE)){
-    database <- get.database(population, gen, database, cohorts)
+    database <- get.database(population, gen, database, cohorts, id = id)
 
     if(length(traits)==0){
       traits <- 1:population$info$bv.nr
@@ -115,14 +116,14 @@ get.dendrogram.heatmap <- function(population, path=NULL, database=NULL, gen=NUL
                             keysize = 1)
           grDevices::dev.off()
         } else{
-          stop("Use of grDevices without being installed!")
+          warning("Use of grDevices without being installed!")
         }
       }
 
 
 
     } else{
-      stop("Use of gplots without being installed!")
+      warning("Use of gplots without being installed!")
     }
   }
 

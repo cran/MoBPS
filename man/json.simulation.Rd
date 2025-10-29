@@ -21,7 +21,10 @@ json.simulation(
   export.population = FALSE,
   export.gen = NULL,
   export.timepoint = NULL,
-  fixed.generation.order = NULL
+  export.cor = FALSE,
+  fixed.generation.order = NULL,
+  generation.cores = NULL,
+  manual.select.check = FALSE
 )
 }
 \arguments{
@@ -43,7 +46,7 @@ json.simulation(
 
 \item{miraculix.cores}{Number of cores used in miraculix applications (default: 1)}
 
-\item{miraculix.chol}{Set to FALSE to manually deactive the use of miraculix for any cholesky decompostion even though miraculix is actived}
+\item{miraculix.chol}{Set to FALSE to manually deactive the use of miraculix for any cholesky decompostion even though miraculix is active}
 
 \item{skip.population}{Set to TRUE to not execute breeding actions (only cost/time estimation will be performed)}
 
@@ -57,7 +60,13 @@ json.simulation(
 
 \item{export.timepoint}{Last timepoint to simulate before exporting population to file}
 
+\item{export.cor}{Set TRUE to export correlation matrices}
+
 \item{fixed.generation.order}{Vector containing the order of cohorts to generate (Advanced // Testing Parameter!)}
+
+\item{generation.cores}{Number of cores used for the generation of new individuals (This will only be active when generating more than 500 individuals)}
+
+\item{manual.select.check}{Set to FALSE to not automatically remove cohorts from Manual select with they lead to an invalid breeding scheme}
 }
 \value{
 Population-list

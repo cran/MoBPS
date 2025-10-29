@@ -5,28 +5,25 @@
 \title{Approximate empirical kinship}
 \usage{
 kinship.emp.fast(
-  animals = NULL,
   population = NULL,
+  animals = NULL,
   gen = NULL,
   database = NULL,
   cohorts = NULL,
-  sym = FALSE,
-  ibd.obs = 50,
-  hbd.obs = 10
+  ibd.obs = 200,
+  hbd.obs = 50
 )
 }
 \arguments{
-\item{animals}{List of animals to compute kinship for}
-
 \item{population}{Population list}
+
+\item{animals}{List of animals to compute kinship for}
 
 \item{gen}{Quick-insert for database (vector of all generations to export)}
 
 \item{database}{Groups of individuals to consider for the export}
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
-
-\item{sym}{If True derive matrix entries below principle-diagonal}
 
 \item{ibd.obs}{Number of Individual pairs to sample for IBD estimation}
 

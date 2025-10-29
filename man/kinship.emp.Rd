@@ -5,18 +5,19 @@
 \title{Empirical kinship}
 \usage{
 kinship.emp(
-  animals = NULL,
   population = NULL,
+  animals = NULL,
   gen = NULL,
   database = NULL,
   cohorts = NULL,
-  sym = FALSE
+  sym = FALSE,
+  use.id = TRUE
 )
 }
 \arguments{
-\item{animals}{List of animals to compute kinship for}
-
 \item{population}{Population list}
+
+\item{animals}{List of animals to compute kinship for}
 
 \item{gen}{Quick-insert for database (vector of all generations to export)}
 
@@ -25,12 +26,14 @@ kinship.emp(
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
 \item{sym}{If True derive matrix entries below principle-diagonal}
+
+\item{use.id}{Set TRUE to use animal IDs for column/row-names in the output matrix (default: TRUE)}
 }
 \value{
 Empirical kinship matrix (IBD-based since Founders)
 }
 \description{
-Function to compute empirical kinship for a set of individuals)
+Function to compute empirical kinship for a set of individuals
 }
 \examples{
 data(ex_pop)

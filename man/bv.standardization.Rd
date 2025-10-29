@@ -6,14 +6,17 @@
 \usage{
 bv.standardization(
   population,
-  mean.target = 100,
-  var.target = 10,
+  mean.target = NA,
+  var.target = NA,
   gen = NULL,
   database = NULL,
   cohorts = NULL,
-  adapt.bve = FALSE,
-  adapt.pheno = FALSE,
-  verbose = FALSE
+  adapt.bve = TRUE,
+  adapt.pheno = NULL,
+  verbose = FALSE,
+  set.zero = FALSE,
+  adapt.sigma.e = FALSE,
+  traits = NULL
 )
 }
 \arguments{
@@ -29,11 +32,17 @@ bv.standardization(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
-\item{adapt.bve}{Modify previous breeding value estimations by scaling (default: FALSE)}
+\item{adapt.bve}{Modify previous breeding value estimations by scaling (default: TRUE)}
 
-\item{adapt.pheno}{Modify previous phenotypes by scaling (default: FALSE)}
+\item{adapt.pheno}{Modify previous phenotypes by scaling (default: TRUE)}
 
 \item{verbose}{Set to TRUE to display prints}
+
+\item{set.zero}{Set to TRUE to have no effect on the 0 genotype (or 00 for QTLs with 2 underlying SNPs)}
+
+\item{adapt.sigma.e}{Set to TRUE to scale sigma.e values used based on scaling}
+
+\item{traits}{Use this parameter to only perform scaling of these traits (alternatively set values in mean/var.target to NA, default: all traits)}
 }
 \value{
 Population-list with scaled QTL-effects

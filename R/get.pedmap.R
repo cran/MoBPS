@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,8 +28,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
+#' @param id Individual IDs to search/collect in the database
 #' @param non.genotyped.as.missing Set to TRUE to replaced non-genotyped entries with "./."
-#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names
+#' @param use.id Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)
 #' @examples
 #' data(ex_pop)
 #' \donttest{
@@ -41,30 +42,37 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @return Ped and map-file for in gen/database/cohorts selected individuals
 #' @export
 
-get.pedmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, non.genotyped.as.missing=FALSE,
-                       use.id=FALSE){
+get.pedmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=NULL, id = NULL,
+                       non.genotyped.as.missing=FALSE,
+                       use.id=TRUE){
 
 
-  haplo <- get.haplo(population, database=database, gen=gen, cohorts=cohorts, export.alleles=FALSE)
+  haplo <- get.haplo(population, database=database, gen=gen, cohorts=cohorts, id = id, export.alleles=FALSE)
   # haplo <- get.haplo(population, gen=1)
   if(length(path)==0){
     path <- "population"
   }
-  chr.nr <- sum(population$info$snp)
+  chr.nr <- numeric(sum(population$info$snp))
   start <- 1
   for(index in 1:length(population$info$snp)){
     if(population$info$snp[index]>0){
-      chr.nr[start:(start+population$info$snp[index]-1)] <- index
+
+      if(length(population$info$chromosome.name)>=index){
+        chr.nr[start:(start+population$info$snp[index]-1)] <- population$info$chromosome.name[index]
+      } else{
+        chr.nr[start:(start+population$info$snp[index]-1)] <- index
+      }
+
       start <- start + population$info$snp[index]
     }
   }
-  mapfile <- cbind(chr.nr, population$info$snp.name, 0 ,population$info$bp)
+  mapfile <- cbind(chr.nr, population$info$snp.name, unlist(population$info$position) ,population$info$bp)
   mapfile[is.na(mapfile)] <- 0
   haplo1 <- t(haplo[,(1:(ncol(haplo)/2))*2-1])
   haplo2 <- t(haplo[,(1:(ncol(haplo)/2))*2])
   if(non.genotyped.as.missing){
 
-    is_genotyped <- t(get.genotyped.snp(population, gen=gen, database = database, cohorts=cohorts))
+    is_genotyped <- t(get.genotyped.snp(population, gen=gen, database = database, cohorts=cohorts, id = id))
     if(sum(!is_genotyped)>0){
       haplo1[!is_genotyped] <- "N"
       haplo2[!is_genotyped] <- "N"
@@ -76,7 +84,7 @@ get.pedmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=N
   ped[ped==0] <- "A"
   ped[ped==1] <- "C"
 
-  family.base <- get.database(population, gen=gen, database=database, cohorts=cohorts)
+  family.base <- get.database(population, gen=gen, database=database, cohorts=cohorts, id = id)
   n.animals <- sum(family.base[,4]-family.base[,3]+1)
   family <- sex.s <- numeric(n.animals)
   tillnow <- 1
@@ -87,7 +95,7 @@ get.pedmap <- function(population, path=NULL, database=NULL, gen=NULL, cohorts=N
       tillnow <- tillnow + diff(family.base[index,3:4]) +1
     }
   }
-  pedi <- get.pedigree(population, database = family.base, id=use.id)
+  pedi <- get.pedigree(population, database = family.base, use.id=use.id)
   pedfile <- cbind(family, pedi[,1],pedi[,2],pedi[,3],sex.s,0,ped)
 
 

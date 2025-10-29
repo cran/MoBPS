@@ -9,8 +9,9 @@ get.pheno(
   database = NULL,
   gen = NULL,
   cohorts = NULL,
+  id = NULL,
   use.all.copy = FALSE,
-  use.id = FALSE
+  use.id = TRUE
 )
 }
 \arguments{
@@ -22,9 +23,11 @@ get.pheno(
 
 \item{cohorts}{Quick-insert for database (vector of names of cohorts to export)}
 
+\item{id}{Individual IDs to search/collect in the database}
+
 \item{use.all.copy}{Set to TRUE to extract phenotyping}
 
-\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: FALSE)}
+\item{use.id}{Set to TRUE to use MoBPS ids instead of Sex_Nr_Gen based names (default: TRUE)}
 }
 \value{
 Phenotypes for in gen/database/cohorts selected individuals

@@ -4,7 +4,14 @@
 \alias{check.parents}
 \title{Relatedness check between two individuals}
 \usage{
-check.parents(population, info.father, info.mother, max.rel = 2)
+check.parents(
+  population,
+  info.father,
+  info.mother,
+  max.rel = 2,
+  avoid.mating.parent = FALSE,
+  still.check = FALSE
+)
 }
 \arguments{
 \item{population}{Population list}
@@ -14,9 +21,13 @@ check.parents(population, info.father, info.mother, max.rel = 2)
 \item{info.mother}{position of the second parent in the dataset}
 
 \item{max.rel}{maximal allowed relationship (default: 2, alt: 1 no full-sibs, 0 no half-sibs)}
+
+\item{avoid.mating.parent}{Set to TRUE to avoid matings of an individual to its parents}
+
+\item{still.check}{Internal parameter (avoid.mating.parent check)}
 }
 \value{
-logical with TRUE if relatedness does not excced max.rel / FALSE otherwise.
+logical with TRUE if relatedness does not exceed max.rel / FALSE otherwise.
 }
 \description{
 Internal function to check the relatedness between two individuals

@@ -1,8 +1,8 @@
 '#
   Authors
-Torsten Pook, torsten.pook@uni-goettingen.de
+Torsten Pook, torsten.pook@wur.nl
 
-Copyright (C) 2017 -- 2020  Torsten Pook
+Copyright (C) 2017 -- 2025  Torsten Pook
 
 This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
@@ -28,9 +28,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #' @param database Groups of individuals to consider for the export
 #' @param gen Quick-insert for database (vector of all generations to export)
 #' @param cohorts Quick-insert for database (vector of names of cohorts to export)
-#' @param adapt.bve Modify previous breeding value estimations by scaling (default: FALSE)
-#' @param adapt.pheno Modify previous phenotypes by scaling (default: FALSE)
+#' @param adapt.bve Modify previous breeding value estimations by scaling (default: TRUE)
+#' @param adapt.pheno Modify previous phenotypes by scaling (default: TRUE)
+#' @param adapt.sigma.e Set to TRUE to scale sigma.e values used based on scaling
 #' @param verbose Set to TRUE to display prints
+#' @param set.zero Set to TRUE to have no effect on the 0 genotype (or 00 for QTLs with 2 underlying SNPs)
+#' @param traits Use this parameter to only perform scaling of these traits (alternatively set values in mean/var.target to NA, default: all traits)
 #' @examples
 #' population <- creating.diploid(nsnp=1000, nindi=100, n.additive=100)
 #' population <- bv.standardization(population, mean.target=200, var.target=5)
@@ -39,41 +42,102 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 
-bv.standardization <- function(population, mean.target=100, var.target=10, gen=NULL, database=NULL, cohorts=NULL,
-                               adapt.bve=FALSE, adapt.pheno=FALSE, verbose=FALSE){
+bv.standardization <- function(population, mean.target=NA, var.target=NA, gen=NULL, database=NULL, cohorts=NULL,
+                               adapt.bve=TRUE, adapt.pheno=NULL, verbose=FALSE, set.zero = FALSE,
+                               adapt.sigma.e = FALSE,
+                               traits = NULL){
+
+
 
   n_traits <- population$info$bv.nr
+
+  if(length(traits)>0){
+
+    if(is.character(traits[1])){
+        for(index in 1:length(traits)){
+          tmp = which(population$info$trait.name == traits[index])
+          if(length(tmp)==1){
+            traits[index] = tmp
+          }
+
+        }
+
+      traits = as.numeric(traits)
+
+      if(sum(is.na(traits)) > 0){
+        stop("Traits not correctly linked. Check input in traits")
+      }
+    }
+
+    mean.target_temp = rep(NA, n_traits)
+    var.target_temp = rep(NA, n_traits)
+    mean.target_temp[traits] = mean.target
+    var.target_temp[traits] = var.target
+    mean.target = mean.target_temp
+    var.target = var.target_temp
+  }
+
+  if(length(adapt.pheno)==0){
+    if(sum(population$info$phenotypic.transform)>0){
+      adapt.pheno = FALSE
+      if(verbose){
+        cat("Phenotype transformation deactivated as phenotypic transformation is used. Set adapt.pheno = TRUE to scale.\n")
+      }
+    } else{
+      adapt.pheno = TRUE
+    }
+  }
 
   modi1 <- rep(1, n_traits)
   modi2 <- population$info$base.bv
 
-  if(length(mean.target)<n_traits) mean.target <- rep(mean.target, length.out = n_traits)
-  if(length(var.target)<n_traits) var.target <- rep(var.target, length.out = n_traits)
+  if(length(mean.target)<n_traits){
+    mean.target <- rep(mean.target, length.out = n_traits)
+    mean.target <- c(mean.target, rep(NA, length(mean.target)-n_traits))
+  }
+  if(length(var.target)<n_traits){
+    var.target <- rep(var.target, length.out = n_traits)
+    var.target <- c(var.target, rep(NA, length(var.target)-n_traits))
+  }
   if(length(gen)==0 && length(database)==0 && length(cohorts)==0){
     gen <- nrow(population$info$size)
   }
   database <- get.database(population, gen, database, cohorts)
   ## Variance Standardization
-  for(index in 1:n_traits){
-    new_var <- var.target[index]
+  for(index in (1:n_traits)[!population$info$is.combi]){
+    if(!is.na(var.target[index])){
+      new_var <- var.target[index]
 
-    if(population$info$bv.calculated==FALSE){
-      population <- breeding.diploid(population, verbose=verbose)
+      if(population$info$bv.calculated==FALSE){
+        population <- breeding.diploid(population, verbose=verbose)
+      }
+
+      var_test <- stats::var(get.bv(population, database= database)[index,])
+
+      if(var_test==0){
+        stop(paste0("No variance in trait ", index, ". No scaling to achieve target variance possible."))
+      }
+
+      test1 <- TRUE
+      if(length(population$info$real.bv.add[[index]])>0){
+        population$info$real.bv.add[[index]][,3:5] <- population$info$real.bv.add[[index]][,3:5] * sqrt(  new_var / var_test)
+        if(set.zero){
+          population$info$real.bv.add[[index]][,3:5] = population$info$real.bv.add[[index]][,3:5] - population$info$real.bv.add[[index]][,3]
+        }
+        test1 <- FALSE
+      }
+      if(length(population$info$real.bv.mult[[index]])>0){
+        population$info$real.bv.mult[[index]][,5:13] <- population$info$real.bv.mult[[index]][,5:13] * sqrt(  new_var / var_test)
+        if(set.zero){
+          population$info$real.bv.mult[[index]][,5:13] = population$info$real.bv.mult[[index]][,5:13] - population$info$real.bv.mult[[index]][,5]
+        }
+        test1 <- FALSE
+      }
+      modi1[index] <- sqrt(new_var / var_test)
+
+      if(test1 && verbose) cat("You entered a trait without quantitative loci. Is this intentional?\n")
     }
 
-    var_test <- stats::var(get.bv(population, database= database)[index,])
-    test1 <- TRUE
-    if(length(population$info$real.bv.add[[index]])>0){
-      population$info$real.bv.add[[index]][,3:5] <- population$info$real.bv.add[[index]][,3:5] * sqrt(  new_var / var_test)
-      test1 <- FALSE
-    }
-    if(length(population$info$real.bv.mult[[index]])>0){
-      population$info$real.bv.mult[[index]][,5:13] <- population$info$real.bv.mult[[index]][,5:13] * sqrt(  new_var / var_test)
-      test1 <- FALSE
-    }
-    modi1[index] <- sqrt(new_var / var_test)
-
-    if(test1 && verbose) cat("You entered a trait without quantitative loci. Is this intentional?\n")
 
   }
 
@@ -85,16 +149,24 @@ bv.standardization <- function(population, mean.target=100, var.target=10, gen=N
     }
   }
 
+
+  population$info$pool_effects_calc = FALSE
+  population$info$pool_list = NULL
+  population$info$bypool_list = NULL
+
   ## Mean Standardization
   for(index in 1:n_traits){
 
-    if(population$info$bv.calculated==FALSE){
-      population <- breeding.diploid(population, verbose=FALSE)
+    if(!is.na(mean.target[index])){
+      if(population$info$bv.calculated==FALSE){
+        population <- breeding.diploid(population, verbose=FALSE)
+      }
+
+      mean_test <- mean(get.bv(population, database = database)[index,])
+
+      population$info$base.bv[index] <- mean.target[index] + population$info$base.bv[index] - mean_test
     }
 
-    mean_test <- mean(get.bv(population, database = database)[index,])
-
-    population$info$base.bv[index] <- mean.target[index] + population$info$base.bv[index] - mean_test
 
   }
 
@@ -128,5 +200,23 @@ bv.standardization <- function(population, mean.target=100, var.target=10, gen=N
       }
     }
   }
+
+  if(adapt.sigma.e){
+    population$info$last.sigma.e.value = population$info$last.sigma.e.value * modi1
+  } else{
+    population$info$last.sigma.e.redo = TRUE
+  }
+
+  if(length(population$info$e0_mat)>0){
+    population$info$e0_mat = NULL
+  }
+  if(length(population$info$e1_mat)>0){
+    population$info$e1_mat = NULL
+  }
+  if(length(population$info$e2_mat)>0){
+    population$info$e2_mat = NULL
+  }
+
+
   return(population)
 }
